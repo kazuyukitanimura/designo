@@ -1,0 +1,16 @@
+a#logo(href='/')
+  h1= title
+    img(src='images/designo32.png')
+p(style='color: #AEAEAE;margin-top: 2px;margin-bottom: 20px;') The Lightweight Social Client
+#account 
+  a(href= loginto)= loginm
+#main
+  #sidebar
+    div#all(class='sidebar', style='background: #ddd')
+      a(onclick='select("all");return false;', href='#') All
+  #right
+    form#form(enctype="multipart/form-data", onsubmit='send(); return false;')
+      input#name(type='text', value= screen_name, disabled)
+      input#text(type='text', autocomplete='off', autofocus='autofocus')
+      input(type='submit', value='send')
+    #chat
