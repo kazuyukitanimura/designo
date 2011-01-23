@@ -2,16 +2,25 @@
 This is a Twitter client demo with Node.js+Websocket+HTML5. Enjoy realtime tweeting.
 
 ## Requrements:
-- Express
-- Jade
-- less.js
-- Socket.IO-node
-- kazuyukitanimura/session-web-sockets
+- [Express](http://github.com/visionmedia/express/tree/master)
+- [Jade](http://github.com/visionmedia/jade)
+- [less.js](http://github.com/cloudhead/less.js)
+- [Socket.IO-node](https://github.com/LearnBoost/Socket.IO-node)
+- [kazuyukitanimura/session-web-sockets](https://github.com/kazuyukitanimura/session-web-sockets)
 
 ## Demo
-Demo is available at http://designo.pictshare.me
+Demo is available at [http://designo.pictshare.me/](http://designo.pictshare.me/)
 
-More details will be explained at my blog, http://hobbycoding.posterous.com/
+More details will be explained at my blog, [http://hobbycoding.posterous.com/](http://hobbycoding.posterous.com/)
+
+## Tested Environment
+### Browsers
+- Google Chrome
+- Firefox
+- Safari
+
+### Node.js version
+- v0.2.6
 
 ## License
 
@@ -29,7 +38,7 @@ furnished to do so, subject to the following conditions:
 The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED ÅeAS ISÅf, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+THE SOFTWARE IS PROVIDED `AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER

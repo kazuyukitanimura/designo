@@ -49,7 +49,12 @@ app.get('/', function(req, res){
     jadeFile = 'index.jade';
     loginMessage = "Logout";
     loginTo = "/logout";
-    screenName = req.session.oauth._results.screen_name;
+    try{
+      screenName = req.session.oauth._results.screen_name;
+    }catch(e){
+      console.error("screen_name ERROR: " + e);
+      res.redirect('/');
+    }
   }
   res.render(jadeFile, {
     locals: {
@@ -124,7 +129,7 @@ socket.broadcastTo = function(message, to){ //to has to be an Array
       if(this.tid2sid[to[i]]) this.clients[this.tid2sid[to[i]]].send(message);
     }
   }catch(e) {
-    console.error("broadcastTo ERROR"+e);
+    console.error("broadcastTo ERROR: "+e);
   }
   return this;
 };
@@ -148,7 +153,7 @@ socket.on('connection', sws.ws(function(client) {
       //view home
       function scroll (page) {user.getTimeline(page, function(error, data, response){
           if(error) {
-            console.error("TIMELLINE ERROR");
+            console.error("TIMELLINE ERROR: " + error);
           } else{
             client.send({scroll: data});
           }
@@ -169,7 +174,7 @@ socket.on('connection', sws.ws(function(client) {
         }
       });
       stream.on('error', function(err){
-        console.error('ERROR in UserStream: ' + err);
+        console.error('UserStream ERROR: ' + err);
         console.log('graceful restarting in 30 seconds');
         setTimeout("stream = user.openUserStream(params)", 3000);
       });
@@ -179,7 +184,7 @@ socket.on('connection', sws.ws(function(client) {
       //manage followers
       user.followers(function(error, data, response){
         if(error) {
-          console.error("FOLLOWERS ERROR");
+          console.error("FOLLOWERS ERROR: " + error);
         } else{
           client.followers = data;
         }

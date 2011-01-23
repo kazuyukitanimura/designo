@@ -7,7 +7,9 @@ p(style='color: #AEAEAE;margin-top: 2px;margin-bottom: 20px;') The Lightweight S
 #main
   #sidebar
     div#all(class='sidebar', style='background: #ddd')
-      a(onclick='select("all");return false;', href='#') All
+      a(onclick='select("all");return false;', href='#') (
+        span.badge 0
+        ) All
   #right
     form#form(enctype="multipart/form-data", onsubmit='send(); return false;')
       input#name(type='text', value= screen_name, disabled)

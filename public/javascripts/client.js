@@ -8,6 +8,10 @@ SessionWebSocket(function(socket){
   var allObj = $('#all');
   function deleteOutDiv(id_str) {
     var id = '#'+id_str;
+    if($(id).length){
+      var uid = '#' + $(id).attr("class");
+      $(uid+'.sidebar a span.badge').text(function(i,v){return --v;});
+    }
     $(id).before($(id+'>div').css('margin-left','0px'));
     $(id).remove();
   }
@@ -58,13 +62,14 @@ SessionWebSocket(function(socket){
     } else {
       function mkTwtObj(data,scroll) {
         var id = '#'+data.id_str;
+        var uid = '#'+data.user.id_str;
         scroll = scroll ? true : false;
         var p_str = '<p><a href="http://twitter.com/'+data.user.screen_name+'" target="_blank"><img src="'+data.user.profile_image_url+'" class="profile"/></a> '+mkLink(data.text)+'</p><span class="permalink"><span>'+tweetDate(data.created_at)+' via</span> '+data.source+' | </span>';
         var d_str = '<div id='+data.id_str+' class='+data.user.id_str+'>'+p_str+'</div>';
         var rp_str = '<a onclick="reply(\''+data.id_str+'\',\''+data.user.screen_name+'\');" href="#">Reply</a>';
         var rt_str = '<a onclick="retweet('+data.id_str+');" href="#">Retweet</a>';
         var dl_str = '<a onclick="destroy(\''+data.id_str+'\');" href="#">Delete</a>';
-        var bioObj = $('<div id='+data.user.id_str+' class="sidebar" onclick="select(\''+data.user.id_str+'\');"><a href="#"><img src="'+data.user.profile_image_url+'" /> '+data.user.screen_name+'</a><div class="bio"><img src="'+data.user.profile_image_url+'" /><span><b class="fullname">'+data.user.name+'</b><br/><span>@'+data.user.screen_name+'</span><br/>'+data.user.location+'<br/><b>Web:</b> '+mkLink(''+data.user.url)+'<br/><b>Bio:</b> '+data.user.description+'</span></div></div>').hoverBio();
+        var bioObj = $('<div id='+data.user.id_str+' class="sidebar" onclick="select(\''+data.user.id_str+'\');"><a href="#"><img src="'+data.user.profile_image_url+'" /> (<span class="badge">0</span>) '+data.user.screen_name+'</a><div class="bio"><img src="'+data.user.profile_image_url+'" /><span><b class="fullname">'+data.user.name+'</b><br/><span>@'+data.user.screen_name+'</span><br/>'+data.user.location+'<br/><b>Web:</b> '+mkLink(''+data.user.url)+'<br/><b>Bio:</b> '+data.user.description+'</span></div></div>').hoverBio();
         if(scroll) {
           if($(id).length) {
             $(id).html(p_str).addClass(data.user.id_str);
@@ -83,7 +88,7 @@ SessionWebSocket(function(socket){
           if(data.in_reply_to_status_id_str) {
             $(id).append('<div id='+data.in_reply_to_status_id_str+' style="margin-left: 14px;"></div>');
           }
-          if(!($('#'+data.user.id_str).length)){
+          if(!($(uid).length)){
             sidebarObj.append(bioObj);
           }
         } else{
@@ -95,15 +100,21 @@ SessionWebSocket(function(socket){
             } else{
               $(id).append('<span class="permalink">'+rt_str+' - '+rp_str+'</span>');
             }
+            if(data.user.id_str!=selected_id && selected_id != 'all'){
+              $(id).hide();
+            }
             if(data.in_reply_to_status_id_str) {
               $(id).append($('#'+data.in_reply_to_status_id_str).css('margin-left', '14px'));
             }
-            if($('#'+data.user.id_str).length){
-              $('#'+data.user.id_str).remove();
+            if($(uid).length){
+              allObj.after($(uid));
+            }else{
+              allObj.after(bioObj);
             }
-            allObj.after(bioObj);
           }
         }
+        $(uid+'.sidebar a span.badge').text(function(i,v){return ++v;});
+        $('#all.sidebar a span.badge').text(function(i,v){return ++v;});
       }
       if (message.scroll) {
         for (var i = 0, l = message.scroll.length; i < l; i++){
@@ -162,7 +173,7 @@ SessionWebSocket(function(socket){
     $("#"+id_str+" .bio").hide();
     $('.sidebar').removeAttr('style');
     $('#'+id_str).css('background', '#ddd');
-    $('#chat> :hidden').show();
+    $('#chat').find(':hidden').show();
     if(id_str!="all") $('#chat> :not(:has(.'+id_str+'), .'+id_str+')').hide();
     return false;
   }
