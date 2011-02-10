@@ -4,7 +4,7 @@
  */
 
 var express = require('express'),
-    MemoryStore = require('connect/middleware/session/memory'),
+    MemoryStore = require('connect').session.MemoryStore,
     io = require('socket.io'),
     sws = require('SessionWebSocket')(),
     twitter = require('./twitter').Twitter;
@@ -18,7 +18,7 @@ var app = module.exports = express.createServer();
 app.configure(function(){
   app.set('views', __dirname + '/views');
   app.use(express.cookieDecoder());
-  app.use(express.session({ store: new MemoryStore({ reapInterval: 60000 * 10 }) }));
+  app.use(express.session({ secret: 'himitsu', store: new MemoryStore({ reapInterval: 60000 * 10 }) }));
   app.use(sws.http);
   app.use(express.bodyDecoder());
   app.use(express.methodOverride());

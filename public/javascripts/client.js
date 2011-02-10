@@ -173,7 +173,7 @@ SessionWebSocket(function(socket){
     $("#"+id_str+" .bio").hide();
     $('.sidebar').removeAttr('style');
     $('#'+id_str).css('background', '#ddd');
-    $('#chat').find(':hidden').show();
+    $('#chat').find(':hidden:not(.twitpic)').show();
     if(id_str!="all") $('#chat> :not(:has(.'+id_str+'), .'+id_str+')').hide();
     return false;
   }
