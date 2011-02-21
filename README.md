@@ -6,6 +6,7 @@ This is a Twitter client demo with Node.js+Websocket+HTML5. Enjoy realtime tweet
 - [Jade](http://github.com/visionmedia/jade)
 - [less.js](http://github.com/cloudhead/less.js)
 - [Socket.IO-node](https://github.com/LearnBoost/Socket.IO-node)
+- [node-oauth](https://github.com/ciaranj/node-oauth)
 - [kazuyukitanimura/session-web-sockets](https://github.com/kazuyukitanimura/session-web-sockets)
 
 ## Demo
@@ -21,6 +22,7 @@ More details will be explained at my blog, [http://hobbycoding.posterous.com/](h
 
 ### Node.js version
 - v0.2.6
+- v0.4.1
 
 ## License
 

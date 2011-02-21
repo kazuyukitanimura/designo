@@ -1,3 +1,4 @@
+//This is a modified version of twitter.js that is originally from
 //https://github.com/yssk22/node-twbot/blob/master/lib/twitter.js
 var util = require('util'),
     url = require('url'),

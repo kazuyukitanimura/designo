@@ -19,7 +19,7 @@ SessionWebSocket(function(socket){
     function tweetDate(created_at) {
       return new Date(Date.parse(created_at)).toLocaleString().replace(/GMT.+/,"");
     }
-    var re = /((http|https|ftp):\/\/[\w?=&.\/-;#~%-]+(?![\w\s?&.\/;#~%"=-]*>))/g;
+    var re = /((http|https|ftp):\/\/[\w?=&.\/-;#~%-]+(?![\w\s?&.\/;#~%"=-]*>))/g;//Thanks to http://kawika.org/jquery/js/jquery.autolink.js
     var af = '<a href="$1" target="_blank">$1</a> ';
     function mkLink(str){
       return str.replace(re, af);
