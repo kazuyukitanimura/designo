@@ -67,7 +67,7 @@ SessionWebSocket(function(socket){
         var p_str = '<p><a href="http://twitter.com/'+data.user.screen_name+'" target="_blank"><img src="'+data.user.profile_image_url+'" class="profile"/></a> '+mkLink(data.text)+'</p><span class="permalink"><span>'+tweetDate(data.created_at)+' via</span> '+data.source+' | </span>';
         var d_str = '<div id='+data.id_str+' class='+data.user.id_str+'>'+p_str+'</div>';
         var rp_str = '<a onclick="reply(\''+data.id_str+'\',\''+data.user.screen_name+'\');" href="#">Reply</a>';
-        var rt_str = '<a onclick="retweet('+data.id_str+');" href="#">Retweet</a>';
+        var rt_str = '<a onclick="retweet(\''+data.id_str+'\');" href="#">Retweet</a>';
         var dl_str = '<a onclick="destroy(\''+data.id_str+'\');" href="#">Delete</a>';
         var bioObj = $('<div id='+data.user.id_str+' class="sidebar" onclick="select(\''+data.user.id_str+'\');"><a href="#"><img src="'+data.user.profile_image_url+'" /> (<span class="badge">0</span>) '+data.user.screen_name+'</a><div class="bio"><img src="'+data.user.profile_image_url+'" /><span><b class="fullname">'+data.user.name+'</b><br/><span>@'+data.user.screen_name+'</span><br/>'+data.user.location+'<br/><b>Web:</b> '+mkLink(''+data.user.url)+'<br/><b>Bio:</b> '+data.user.description+'</span></div></div>').hoverBio();
         if(scroll) {

@@ -53,7 +53,7 @@ app.get('/', function(req, res){
       screenName = req.session.oauth._results.screen_name;
     }catch(e){
       console.error("screen_name ERROR: " + e);
-      res.redirect('/');
+      setTimeout("res.redirect('/')", 3000);
     }
   }
   res.render(jadeFile, {
@@ -176,24 +176,26 @@ socket.on('connection', sws.ws(function(client) {
       stream.on('error', function(err){
         console.error('UserStream ERROR: ' + err);
         console.log('graceful restarting in 30 seconds');
-        setTimeout("stream = user.openUserStream(params)", 3000);
+        setTimeout("stream = user.openUserStream(params)", 30000);
       });
       stream.on('end', function(){
         console.log('UserStream ends successfully');
-      });
-      //manage followers
-      user.followers(function(error, data, response){
-        if(error) {
-          console.error("FOLLOWERS ERROR: " + error);
-        } else{
-          client.followers = data;
-        }
       });
     }
 
     client.on('message', function(message) {
       //message
       if(user) {
+        //manage followers
+        if(!client.followers) {
+          user.followers(function(error, data, response){
+            if(error) {
+              console.error("FOLLOWERS ERROR: " + error);
+            } else{
+              client.followers = data;
+            }
+          });
+        }
         if(message.text) {
           user.update(message, function(error, data, response){
             if(error) {

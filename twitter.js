@@ -181,11 +181,11 @@ Twitter.prototype.getTimeline = function(params, callback){
   if( typeof params == 'function' ){
     callback = params;
     params = {
-type: 'home'
+      type: 'home'
     };
   }else if( typeof params == 'string' ){
     params = {
-type: params
+      type: params
     };
   }else if( typeof params == 'object') {
     params.type = params.type || 'home';
@@ -200,6 +200,19 @@ type: params
   var uri = buildUrl(path, params);
   this._doGet(uri, callback);
 };
+
+Twitter.prototype.getListStatuses = function(user, id, params, callback){
+  if( typeof(params) == 'function' ){
+    callback = params;
+    params = {
+    };
+  }
+  var path = ['', user, 'lists', id, 'statuses'].join('/') + '.json';
+  console.error(params);
+  var uri = buildUrl(path, params);
+  console.error(uri);
+  this._doGet(uri, callback);
+}
 
 // -----------------------------------------------------------------------------
 // Account Resources
@@ -243,51 +256,51 @@ function UserStream(client, request){
     }
   }
   this._request.connection.on('error', function(err){
-      this.emit('error', err, undefined);
-      });
+    this.emit('error', err, undefined);
+  });
   this._request.on('response', function(response){
-      response.setEncoding('utf8');
-      var isError = response.statusCode != 200;
-      var buff = '';
-      response.on('data', function(chunk){
-        if( isError ){
+    response.setEncoding('utf8');
+    var isError = response.statusCode != 200;
+    var buff = '';
+    response.on('data', function(chunk){
+      if( isError ){
         buff += chunk;
-        }else{
+      }else{
         // valid stream started
         if( chunk.match(/\n/) ){
-        // a line seperatator implies a data seperator.
-        var chunks = chunk.split(/\r?\n/);
-        var jsonStr = buff + chunks.shift(); // first chunk
-        _dataReceived(jsonStr, response);
-        if( chunks ){
-        buff = chunks.pop(); // last chunk move back to buffer because it may be incomplete.
-        }
-        // all chunks are passed
-        for(var i=0, len=chunks.length; i<len; i++){
-        _dataReceived(chunks[i], response);
-        }
+          // a line seperatator implies a data seperator.
+          var chunks = chunk.split(/\r?\n/);
+          var jsonStr = buff + chunks.shift(); // first chunk
+          _dataReceived(jsonStr, response);
+          if( chunks ){
+            buff = chunks.pop(); // last chunk move back to buffer because it may be incomplete.
+          }
+          // all chunks are passed
+          for(var i=0, len=chunks.length; i<len; i++){
+            _dataReceived(chunks[i], response);
+          }
         }else{
-        buff += chunk;
+          buff += chunk;
         }
-        }
-      });
-      response.on('end', function(){
-          if( isError ){
-          var error = new Error(response.statusCode + ': ' + buff);
-          error.statusCode = response.statusCode;
-          try{
+      }
+    });
+    response.on('end', function(){
+      if( isError ){
+        var error = new Error(response.statusCode + ': ' + buff);
+        error.statusCode = response.statusCode;
+        try{
           error.data = JSON.parse(buff);
-          }catch(e){
+        }catch(e){
           error.data = buff;
-          }
-          self.emit('error', error, response);
-          }else{
-          if( buff ){
+        }
+        self.emit('error', error, response);
+      }else{
+        if( buff ){
           _dataReceived(buff);
-          }
-          self.emit('end');
-          }
-          });
+        }
+        self.emit('end');
+      }
+    });
   });
 };
 util.inherits(UserStream, EventEmitter);
@@ -300,14 +313,14 @@ UserStream.prototype.end = function(callback){
     callback && callback();
   }else{
     this._request.on('response', function(response){
-        self._request.connection.destroy();
-        callback && callback();
-        });
+      self._request.connection.destroy();
+      callback && callback();
+    });
   }
 }
 UserStream.prototype.__defineGetter__('client', function(){
-    return this._client;
-    });
+  return this._client;
+});
 
 
 Twitter.prototype.openUserStream = function(params, callback){
