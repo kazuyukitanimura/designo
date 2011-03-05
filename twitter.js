@@ -84,14 +84,14 @@ Twitter.prototype.getRequestToken = function(callback){
       self._token = token;
       self._token_secret = token_secret;
       self._token_results = results;
-      callback && callback(null, self, AUTHORIZE_URL + token);
+      callback && callback(null, AUTHORIZE_URL + token);
     }
   });
 }
 
 Twitter.prototype.getAccessToken = function(verifier, callback){
   var self = this;
-  self._oa.getOAuthAccessToken(
+  this._oa.getOAuthAccessToken(
     self._token, self._token_secret, verifier,
     function(error, akey, asecret, results2){
       if(error){
@@ -373,5 +373,5 @@ Twitter.prototype._createResponseHandler = function(callback){
   };
 };
 
-exports.Twitter = Twitter;
+module.exports = Twitter;
 

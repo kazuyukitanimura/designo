@@ -12,7 +12,13 @@ p(style='color: #AEAEAE;margin-top: 2px;margin-bottom: 20px;') The Lightweight S
         ) All
   #right
     form#form(enctype="multipart/form-data", onsubmit='send(); return false;')
-      input#name(type='text', value= screen_name, disabled)
-      input#text(type='text', autocomplete='off', autofocus='autofocus')
-      input(type='submit', value='send')
+      table(width="100%", border="0", cellpadding="0", cellspacing="0")
+        tbody
+          tr
+            td(align="left", width="64px")
+              input#name(type='text', value= screen_name, disabled)
+            td(align="left", width="100%")
+              input#text(type='text', autocomplete='off', autofocus='autofocus')
+            td(align="left")
+              input(type='submit', value='send')
     #chat

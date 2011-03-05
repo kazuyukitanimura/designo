@@ -64,7 +64,7 @@ SessionWebSocket(function(socket){
         var id = '#'+data.id_str;
         var uid = '#'+data.user.id_str;
         scroll = scroll ? true : false;
-        var p_str = '<p><a href="http://twitter.com/'+data.user.screen_name+'" target="_blank"><img src="'+data.user.profile_image_url+'" class="profile"/></a> '+mkLink(data.text)+'</p><span class="permalink"><span>'+tweetDate(data.created_at)+' via</span> '+data.source+' | </span>';
+        var p_str = '<p><a href="#" onclick="select(\''+data.user.id_str+'\');"><img src="'+data.user.profile_image_url+'" class="profile"/></a> '+mkLink(data.text)+'</p><span class="permalink"><span>'+tweetDate(data.created_at)+' via</span> '+data.source+' | </span>';
         var d_str = '<div id='+data.id_str+' class='+data.user.id_str+'>'+p_str+'</div>';
         var rp_str = '<a onclick="reply(\''+data.id_str+'\',\''+data.user.screen_name+'\');" href="#">Reply</a>';
         var rt_str = '<a onclick="retweet(\''+data.id_str+'\');" href="#">Retweet</a>';

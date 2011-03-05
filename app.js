@@ -4,12 +4,9 @@
  */
 
 var express = require('express'),
-    MemoryStore = require('connect').session.MemoryStore,
     io = require('socket.io'),
     sws = require('SessionWebSocket')(),
-    twitter = require('./twitter').Twitter;
-const crypto = require('crypto'),
-      fs = require("fs");
+    twitter = require('./twitter');
 
 var app = module.exports = express.createServer();
 
@@ -17,14 +14,14 @@ var app = module.exports = express.createServer();
 
 app.configure(function(){
   app.set('views', __dirname + '/views');
-  app.use(express.cookieDecoder());
-  app.use(express.session({ secret: 'himitsu', store: new MemoryStore({ reapInterval: 60000 * 10 }) }));
+  app.use(express.cookieParser());
+  app.use(express.session({ secret: 'himitsu' }));
   app.use(sws.http);
-  app.use(express.bodyDecoder());
+  app.use(express.bodyParser());
   app.use(express.methodOverride());
   app.use(express.compiler({ src: __dirname + '/public', enable: ['less'] }));
   app.use(app.router);
-  app.use(express.staticProvider(__dirname + '/public'));
+  app.use(express.static(__dirname + '/public'));
   app.use(express.logger({ format: ':method :url' }));
 });
 
@@ -57,12 +54,10 @@ app.get('/', function(req, res){
     }
   }
   res.render(jadeFile, {
-    locals: {
-      title: 'designo',
-      loginm: loginMessage,
-      loginto: loginTo,
-      screen_name: screenName
-    }
+    title: 'designo',
+    loginm: loginMessage,
+    loginto: loginTo,
+    screen_name: screenName
   });
 });
 
@@ -93,13 +88,13 @@ var consumerSecret = "your consumer secret";
 
 function authorize(req, res){
   var tw = new twitter(consumerKey, consumerSecret);
-  tw.getRequestToken(function(error, self, url){
+  tw.getRequestToken(function(error, url){
     if(error) {
       console.error(error);
       res.writeHead(500, {'Content-Type': 'text/html'});
       res.send('ERROR :' + error);
     }else {
-      req.session.oauth = self;
+      req.session.oauth = tw;
       res.redirect(url);
     }
   });
@@ -151,7 +146,8 @@ socket.on('connection', sws.ws(function(client) {
         console.error('socket.tid2sid ERROR: ' + e);
       }
       //view home
-      function scroll (page) {user.getTimeline(page, function(error, data, response){
+      function scroll (page) {
+        user.getTimeline(page, function(error, data, response){
           if(error) {
             console.error("TIMELLINE ERROR: " + error);
           } else{
