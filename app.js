@@ -77,8 +77,7 @@ app.get('/authorized', function(req, res){
 // Only listen on $ node app.js
 
 if (!module.parent) {
-  //app.setSecure(credentials);
-  app.listen(8080, "173.255.215.27");
+  app.listen(8080);
   console.log("Express server listening on port %d", app.address().port);
 }
 
