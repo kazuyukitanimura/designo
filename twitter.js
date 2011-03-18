@@ -255,7 +255,8 @@ function UserStream(client, request){
       }
     }
   }
-  this._request.connection.on('error', function(err){
+  //this._request.connection.on('error', function(err){
+  this._request.on('error', function(err){
     this.emit('error', err, undefined);
   });
   this._request.on('response', function(response){

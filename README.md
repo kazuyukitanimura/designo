@@ -7,7 +7,8 @@ This is a Twitter client demo with Node.js+Websocket+HTML5. Enjoy realtime tweet
 - [less.js](http://github.com/cloudhead/less.js)
 - [Socket.IO-node](https://github.com/LearnBoost/Socket.IO-node)
 - [node-oauth](https://github.com/ciaranj/node-oauth)
-- [kazuyukitanimura/session-web-sockets](https://github.com/kazuyukitanimura/session-web-sockets)
+- [kazuyukitanimura/Socket.IO-connect](https://github.com/kazuyukitanimura/Socket.IO-connect)
+-- Designo does not use session-web-sockets anymore
 
 ## Demo
 Demo is available at [http://designo.pictshare.me/](http://designo.pictshare.me/)

@@ -1,1 +1,0 @@
-/usr/local/lib/node/.npm/SessionWebSocket/0.1.1/package/example/static/sws.js

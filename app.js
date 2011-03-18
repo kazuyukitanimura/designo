@@ -5,7 +5,6 @@
 
 var express = require('express'),
     io = require('socket.io'),
-    sws = require('SessionWebSocket')(),
     twitter = require('./twitter');
 
 var app = module.exports = express.createServer();
@@ -15,8 +14,7 @@ var app = module.exports = express.createServer();
 app.configure(function(){
   app.set('views', __dirname + '/views');
   app.use(express.cookieParser());
-  app.use(express.session({ secret: 'himitsu' }));
-  app.use(sws.http);
+  app.use(express.session({ secret: 'himitsu', fingerprint: "" }));
   app.use(express.bodyParser());
   app.use(express.methodOverride());
   app.use(express.compiler({ src: __dirname + '/public', enable: ['less'] }));
@@ -50,7 +48,7 @@ app.get('/', function(req, res){
       screenName = req.session.oauth._results.screen_name;
     }catch(e){
       console.error("screen_name ERROR: " + e);
-      setTimeout("res.redirect('/')", 3000);
+      setTimeout(res.redirect('/'), 3000);
     }
   }
   res.render(jadeFile, {
@@ -129,15 +127,14 @@ socket.broadcastTo = function(message, to){ //to has to be an Array
 };
 var count = 0;
 var maxcount = 0;
-socket.on('connection', sws.ws(function(client) {
+require('socket.io-connect');
+socket.on('connection', socket.prefixWithMiddleware(function(client,req,res) {
   count++;
   client.broadcast({count: count});
   client.send({count: count});
   if(count>maxcount) console.log("maxcount: "+(maxcount=count));
 
-  client.on('secure', function(){
-    console.log("SECURE");
-    var user = client.session.oauth;
+    var user = req.session.oauth;
     if(user) {
       try{
         socket.tid2sid[user._results.user_id] = client.sessionId;
@@ -150,7 +147,7 @@ socket.on('connection', sws.ws(function(client) {
           if(error) {
             console.error("TIMELLINE ERROR: " + error);
           } else{
-            client.send({scroll: data});
+            client.send(data);
           }
         });
       }
@@ -171,7 +168,7 @@ socket.on('connection', sws.ws(function(client) {
       stream.on('error', function(err){
         console.error('UserStream ERROR: ' + err);
         console.log('graceful restarting in 30 seconds');
-        setTimeout("stream = user.openUserStream(params)", 30000);
+        setTimeout((function(params){stream = user.openUserStream(params)})(params), 30000);
       });
       stream.on('end', function(){
         console.log('UserStream ends successfully');
@@ -220,10 +217,6 @@ socket.on('connection', sws.ws(function(client) {
         }
       }
     });
-  });
-  client.on('insecure', function(){
-    console.log("INSECURE");
-  });
   client.on('disconnect', function() { //disconnect
     count--;
     client.broadcast({count: count});
