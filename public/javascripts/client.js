@@ -8,7 +8,7 @@ $(function(){
   var textObj = $('#text');
   var sidebarObj = $('#sidebar');
   var allObj = $('#all');
-  var newestId = '0';
+  var oldestId = '0000000000000000000000000000000000000000000000000';
   function deleteOutDiv(id_str){
     var id = '#'+id_str;
     if($(id).length){
@@ -20,9 +20,6 @@ $(function(){
     $(id).remove();
   }
   socket.on('message', function(message){
-    function tweetDate(created_at){
-      return new Date(Date.parse(created_at)).toLocaleString().replace(/GMT.+/,"");
-    }
     var re = /((http|https|ftp):\/\/[\w?=&.\/-;#~%-]+(?![\w\s?&.\/;#~%"=-]*>))/g;//Thanks to http://kawika.org/jquery/js/jquery.autolink.js
     var af = '<a href="$1" target="_blank">$1</a> ';
     function mkLink(str){
@@ -71,14 +68,14 @@ $(function(){
         var uid = '#'+data.user.id_str;
 
         var len1 = data.id_str.length;
-        var len2 = newestId.length;
-        var scroll = true;
-        if((len1===len2 && data.id_str>newestId) || len1>len2){
-          newestId = data.id_str;
-          scroll = false;
+        var len2 = oldestId.length;
+        var scroll = false;
+        if((len1===len2 && data.id_str<oldestId) || len1<len2){
+          oldestId = data.id_str;
+          scroll = true;
         }
 
-        var p_str = '<p><a href="#" onclick="select(\''+data.user.id_str+'\');"><img src="'+data.user.profile_image_url+'" class="profile"/></a> '+mkLink(data.text)+'</p><span class="permalink"><span class="created_at">'+tweetDate(data.created_at)+' via</span> '+data.source+' | </span>';
+        var p_str = '<p><a href="#" onclick="select(\''+data.user.id_str+'\');"><img src="'+data.user.profile_image_url+'" class="profile"/></a> '+mkLink(data.text)+'</p><span class="permalink"><span><time class="sec" datetime="'+data.created_at+'"></time> via</span> '+data.source+' | </span>';
         var d_str = '<div id='+data.id_str+' class='+data.user.id_str+'>'+p_str+'</div>';
         var rp_str = '<a onclick="reply(\''+data.id_str+'\',\''+data.user.screen_name+'\');" href="#">Reply</a>';
         var rt_str = '<a onclick="retweet(\''+data.id_str+'\');" href="#">Retweet</a>';
@@ -127,6 +124,28 @@ $(function(){
     }
   });
 
+  $.fn.ago = function(){
+    return this.each(function(){
+      var timestamp = Date.parse($(this).attr("datetime"));
+      var duration = new Date() - timestamp;
+      if(duration<60000){
+        $(this).text((duration/1000).toFixed()+" secconds ago");
+      }else if(duration<3600000){
+        $(this).attr('class','min').text((duration/60000).toFixed(1)+" minutes ago");
+      }else if(duration<86400000){
+        $(this).attr('class','hr').text((duration/3600000).toFixed(1)+" hours ago");
+      }else if(duration<31*86400000){
+        $(this).attr('class','day').text((duration/86400000).toFixed(1)+" days ago");
+      }else{ 
+        $(this).attr('class','').text(new Date(timestamp).toLocaleString().replace(/GMT.+/,""));
+      }
+    });
+  }
+  setInterval(function(){ $('time.sec').ago(); },1000);
+  setInterval(function(){ $('time.min').ago(); },60000/6);
+  setInterval(function(){ $('time.hr').ago(); },3600000/4);
+  setInterval(function(){ $('time.day').ago(); },86400000/3);
+
   socket.on('disconnect', function(){
     setTimeout("window.location.reload()", 10000);
   });
@@ -158,7 +177,6 @@ $(function(){
     var text = textObj.val();
     
     if (text && name) {
-      var time = new Date().getTime();
       socket.send({user: {screen_name: name}, text: text, created_at: (new Date()).toString(), in_reply_to_status_id: reply_id});
       textObj.val('');
       reply_id = '';
