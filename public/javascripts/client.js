@@ -4,8 +4,8 @@ $(function(){
   var reply_id = '';
   var selected_id = 'all';
   var chatObj = $('#chat');
-  var name = $('#name').val();
-  var textObj = $('#text');
+  var name = $('#name').text();
+  var textObj = $('#text').focus();
   var sidebarObj = $('#sidebar');
   var allObj = $('#all');
   var oldestId = '0000000000000000000000000000000000000000000000000';
@@ -129,13 +129,13 @@ $(function(){
       var timestamp = Date.parse($(this).attr("datetime"));
       var duration = new Date() - timestamp;
       if(duration<60000){
-        $(this).text((duration/1000).toFixed()+" secconds ago");
+        $(this).text((duration/1000).toPrecision(2)+" secconds ago");
       }else if(duration<3600000){
-        $(this).attr('class','min').text((duration/60000).toFixed(1)+" minutes ago");
+        $(this).attr('class','min').text((duration/60000).toPrecision(2)+" minutes ago");
       }else if(duration<86400000){
-        $(this).attr('class','hr').text((duration/3600000).toFixed(1)+" hours ago");
+        $(this).attr('class','hr').text((duration/3600000).toPrecision(2)+" hours ago");
       }else if(duration<31*86400000){
-        $(this).attr('class','day').text((duration/86400000).toFixed(1)+" days ago");
+        $(this).attr('class','day').text((duration/86400000).toPrecision(2)+" days ago");
       }else{ 
         $(this).attr('class','').text(new Date(timestamp).toLocaleString().replace(/GMT.+/,""));
       }
@@ -145,6 +145,13 @@ $(function(){
   setInterval(function(){ $('time.min').ago(); },60000/6);
   setInterval(function(){ $('time.hr').ago(); },3600000/4);
   setInterval(function(){ $('time.day').ago(); },86400000/3);
+
+  textObj.keydown(function(e){
+    if((e.keyCode||e.which)===13){
+      document.send();
+      e.preventDefault();
+    }
+  });
 
   socket.on('disconnect', function(){
     setTimeout("window.location.reload()", 10000);
@@ -161,7 +168,7 @@ $(function(){
     textObj.focus();
     var ats = $('#'+id_str).text().match(reid);
     var redundant = new RegExp('@('+screen_name+'|'+name+') ','g');
-    ats ? textObj.val('@'+screen_name+' '+(jQuery.unique(ats).join(' ')+' ').replace(redundant, '')) : textObj.val('@'+screen_name+' ');
+    ats ? textObj.text('@'+screen_name+' '+(jQuery.unique(ats).join(' ')+' ').replace(redundant, '')) : textObj.text('@'+screen_name+' ');
     reply_id = id_str;
     return false;
   }
@@ -174,7 +181,7 @@ $(function(){
   }
 
   this.send = function(){
-    var text = textObj.val();
+    var text = textObj.text();
     
     if (text && name) {
       socket.send({user: {screen_name: name}, text: text, created_at: (new Date()).toString(), in_reply_to_status_id: reply_id});

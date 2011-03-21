@@ -159,7 +159,7 @@ body {
   }
 }
 #form {
-  width: auto;
+  width: 100%;
   background: #333;
   padding: 5px 10px;
   border-left: 5px solid #ddd;
@@ -167,17 +167,21 @@ body {
   border-right: 5px solid #ddd;
   border-bottom: none;
   margin-top: -5px;
-  input[type=text] {
+  display: table;
+  #name {
+    width: 64px;
+    padding: 5px;
+    border: 1px solid #eee;
+    background: #eee;
+    display: table-cell;
+  }
+  #text {
+    width: 100%;
     padding: 5px;
     background: #fff;
     border: 1px solid #eee;
-  }
-  #name {
-    width: 64px;
-    background: #eee;
-  }
-  #text {
-    width: 99%;
+    display: table-cell;
+    white-space: pre-wrap;
   }
   input[type=submit] {
     cursor: pointer;
@@ -188,6 +192,7 @@ body {
              -webkit-border-radius: 8px;
              margin-left: 5px;
              text-shadow: 0 1px 0 #fff;
+    display: table-cell;
   }
   input[type=submit]:hover {
     background: #A2A2A2;

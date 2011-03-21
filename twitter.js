@@ -1,5 +1,5 @@
 //This is a modified version of twitter.js that is originally from
-//https://github.com/yssk22/node-twbot/blob/master/lib/twitter.js
+//https://github.com/yssk22/node-twbot/
 var util = require('util'),
     url = require('url'),
     querystring = require('querystring'),
@@ -17,22 +17,30 @@ if (debugLevel & 0x4) {
   debug = function () { };
 }
 
-
-// Twitter Configuration
+/**
+ * OAuth Configuration constants
+ */
 var OAUTH_CONFIG = {
   RequestTokenUrl : "https://api.twitter.com/oauth/request_token",
   AccessTokenUrl : "https://api.twitter.com/oauth/access_token",
   Version : "1.0",
   Method  : "HMAC-SHA1"
 };
+
+/**
+ * Twitter API endpoint URL
+ */
 var API_URL = "https://api.twitter.com/1";
 var STREAM_URL = "https://userstream.twitter.com/2";
 var AUTHORIZE_URL = "https://twitter.com/oauth/authorize?oauth_token=";
+
 /**
  * Twitter API Client
  *
- * @params String consumerKey OAuth Consumer Key
- * @params String consumerSecret OAuth Consumer Secret
+ * @param consumerKey {String} consumerKey OAuth Consumer Key
+ * @param consumerSecret {String} consumerSecret OAuth Consumer Secret
+ * @param options {Object} API behavior options
+ *
  */
 function Twitter(consumerKey, consumerSecret, options){
   if( !options ){
@@ -54,19 +62,37 @@ function Twitter(consumerKey, consumerSecret, options){
   this._apiUrl = options.apiUrl || API_URL;
   this._streamUrl = options.streamUrl || STREAM_URL;
 };
-
+/**
+ * Normalize the error as an Error object.
+ *
+ * @param err {Object} An object to be normalized
+ *
+ */
 function normalizeError(err){
   if( err instanceof Error ){
     return err;
-  }else{
+  }else if( err.statusCode ){
     // for 4XX/5XX error
     var e = new Error(err.statusCode + ': ' + err.data);
     e.statusCode = err.statusCode;
-    e.data = err.data;
+    try{
+      e.data = JSON.parse(err.data);
+    }catch(er){
+      e.data = err.data;
+    }
     return e;
+  }else{
+    // unknown error
+    return new Error(e);
   }
 }
 
+/**
+ * build the url with the specified path and params.
+ *
+ * @param path {String} the path string.
+ * @param params {Object} (optional) the query parameter object.
+ */
 function buildUrl(path, params){
   var qs;
   if( typeof params == 'object' ){
@@ -113,8 +139,8 @@ Twitter.prototype.show = function(id, params, callback){
     callback = params;
     params = {};
   }
-  var uri = buildUrl('/statuses/' + id + '.json', params);
-  return this._doGet(uri, callback);
+  var path = '/statuses/' + id + '.json';
+  return this._doGet(path, params, callback);
 };
 
 Twitter.prototype.update = function(params, callback){
@@ -125,11 +151,6 @@ Twitter.prototype.update = function(params, callback){
   } else{
     params = {status: params.text, in_reply_to_status_id: params.in_reply_to_status_id};
   }
-  if( params.status.length > 140 ){
-    var params2 = {text: params.status.substr(137), in_reply_to_status_id: params.in_reply_to_status_id};
-    this.update(params2, callback);
-    params.status = params.status.substr(0, 137) + "...";
-  }
   return this._doPost('/statuses/update.json', params, callback);
 };
 
@@ -139,6 +160,9 @@ Twitter.prototype.destroy = function(id, callback){
 
 Twitter.prototype.retweet = function(id, callback){
   return this._doPost('/statuses/retweet/' + id + '.json', {}, callback);
+};
+Twitter.prototype.retweets = function(id, callback){
+  return this._doGet('/statuses/retweets/' + id + '.json', {}, callback);
 };
 
 // -----------------------------------------------------------------------------
@@ -169,49 +193,44 @@ Twitter.prototype.followers = function(params, callback){
       user_id: this._results.user_id
     };
   }
-  var uri = buildUrl("/followers/ids.json", params);
-  this._doGet(uri, callback);
+  var path = "/followers/ids.json";
+  this._doGet(path, params, callback);
 };
 
 // -----------------------------------------------------------------------------
 // Tweets Resources
 // -----------------------------------------------------------------------------
-var supportedTLTypes = ['public', 'home', 'friends', 'user'];
+var supportedTLTypes = ['public_timeline', 'home_timeline', 'friends_timeline', 'user_timeline','mentions','retweeted_by_me','retweeted_to_me','retweeted_of_me'];
 Twitter.prototype.getTimeline = function(params, callback){
   if( typeof params == 'function' ){
     callback = params;
     params = {
-      type: 'home'
+      type: 'home_timeline'
     };
   }else if( typeof params == 'string' ){
     params = {
       type: params
     };
   }else if( typeof params == 'object') {
-    params.type = params.type || 'home';
+    params.type = params.type || 'home_timeline';
   }else {
     throw new TypeError('params must be string or object');
   }
   if( supportedTLTypes.indexOf(params.type) == -1 ){
     throw new Error('timeline type must be one of (' + supportedTLTypes.join(',') + ') but ' + params.type + '.');
   }
-  var path = '/statuses/' + params.type + '_timeline.json';
+  var path = '/statuses/' + params.type + '.json';
   delete(params.type);
-  var uri = buildUrl(path, params);
-  this._doGet(uri, callback);
+  this._doGet(path, params, callback);
 };
 
 Twitter.prototype.getListStatuses = function(user, id, params, callback){
   if( typeof(params) == 'function' ){
     callback = params;
-    params = {
-    };
+    params = {};
   }
   var path = ['', user, 'lists', id, 'statuses'].join('/') + '.json';
-  console.error(params);
-  var uri = buildUrl(path, params);
-  console.error(uri);
-  this._doGet(uri, callback);
+  this._doGet(path, params, callback);
 }
 
 // -----------------------------------------------------------------------------
@@ -224,8 +243,8 @@ Twitter.prototype.getAccount = function(params, callback){
     callback = params;
     params = {};
   }
-  var url = buildUrl('/account/verify_credentials.json', params);
-  this._doGet(url, callback);
+  var path = '/account/verify_credentials.json';
+  this._doGet(path, params, callback);
 };
 
 
@@ -255,11 +274,11 @@ function UserStream(client, request){
       }
     }
   }
-  //this._request.connection.on('error', function(err){
-  this._request.on('error', function(err){
+  self._request.on('error', function(err){
     this.emit('error', err, undefined);
   });
-  this._request.on('response', function(response){
+  self._request.on('response', function(response){
+    self._response = response;
     response.setEncoding('utf8');
     var isError = response.statusCode != 200;
     var buff = '';
@@ -336,7 +355,8 @@ Twitter.prototype.openUserStream = function(params, callback){
 // Private methods for Twitter class
 // -----------------------------------------------------------------------------
 
-Twitter.prototype._doGet = function(path, callback){
+Twitter.prototype._doGet = function(path, params, callback){
+  path = buildUrl(path, params);
   debug('GET ' + path);
   var url = [this._apiUrl, path].join('');
   this._oa.get(url, this.accessKey, this.accessSecret,
