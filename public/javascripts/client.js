@@ -15,6 +15,7 @@ $(function(){
       var uid = '#' + $(id).attr("class");
       $(uid+'.sidebar a span.badge').text(function(i,v){return --v;});
       $('#all.sidebar a span.badge').text(function(i,v){return --v;});
+      $('#mentions.sidebar a span.badge').text(function(i,v){return --v;});
     }
     $(id).before($(id+'>div').css('margin-left','0px'));
     $(id).remove();
@@ -76,7 +77,7 @@ $(function(){
         }
 
         var p_str = '<p><a href="#" onclick="select(\''+data.user.id_str+'\');"><img src="'+data.user.profile_image_url+'" class="profile"/></a> '+mkLink(data.text)+'</p><span class="permalink"><span><time class="sec" datetime="'+data.created_at+'"></time> via</span> '+data.source+' | </span>';
-        var d_str = '<div id='+data.id_str+' class='+data.user.id_str+'>'+p_str+'</div>';
+        var d_str = '<div id='+data.id_str+' class="'+data.user.id_str+isMention(data.text)+'">'+p_str+'</div>';
         var rp_str = '<a onclick="reply(\''+data.id_str+'\',\''+data.user.screen_name+'\');" href="#">Reply</a>';
         var rt_str = '<a onclick="retweet(\''+data.id_str+'\');" href="#">Retweet</a>';
         var dl_str = '<a onclick="destroy(\''+data.id_str+'\');" href="#">Delete</a>';
@@ -117,6 +118,14 @@ $(function(){
           $(uid+'.sidebar a span.badge').text(function(i,v){return ++v;});
           $('#all.sidebar a span.badge').text(function(i,v){return ++v;});
           $(id+' p a img.profile').hoverBio(uid);
+          function isMention(str){
+            if(str.match('@'+name)){
+              $('#mentions.sidebar a span.badge').text(function(i,v){return ++v;});
+              return ' mentions';
+            }else{
+              return '';
+            }
+          }
         }
       }else{
         console.log(message);
@@ -165,10 +174,10 @@ $(function(){
 
   var reid = /(@[\w?=&.\/-9;#~%-]+(?![\w\s?&.\/;#~%"=-]*>))/g;
   this.reply = function(id_str, screen_name){
-    textObj.focus();
     var ats = $('#'+id_str).text().match(reid);
     var redundant = new RegExp('@('+screen_name+'|'+name+') ','g');
     ats ? textObj.text('@'+screen_name+' '+(jQuery.unique(ats).join(' ')+' ').replace(redundant, '')) : textObj.text('@'+screen_name+' ');
+    textObj.focus();
     reply_id = id_str;
     return false;
   }
@@ -185,7 +194,7 @@ $(function(){
     
     if (text && name) {
       socket.send({user: {screen_name: name}, text: text, created_at: (new Date()).toString(), in_reply_to_status_id: reply_id});
-      textObj.val('');
+      textObj.text('');
       reply_id = '';
       textObj.focus();
     }else{

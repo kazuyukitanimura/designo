@@ -64,8 +64,9 @@ app.get('/login', function(req, res){
 });
 
 app.get('/logout', function(req, res){
-  req.session.oauth = null;
-  res.redirect('/');
+  req.session.destroy(function(){
+    res.redirect('/');
+  });
 });
 
 app.get('/authorized', function(req, res){

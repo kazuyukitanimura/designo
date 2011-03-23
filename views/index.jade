@@ -6,6 +6,10 @@ p(style='color: #AEAEAE;margin-top: 2px;margin-bottom: 20px;') The Lightweight S
   a(href= loginto)= loginm
 #main
   #sidebar
+    div#mentions(class='sidebar')
+      a(onclick='select("mentions");return false;', href='#') (
+        span.badge 0
+        ) @Mentions
     div#all(class='sidebar', style='background: #ddd')
       a(onclick='select("all");return false;', href='#') (
         span.badge 0
