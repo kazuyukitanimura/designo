@@ -9,21 +9,29 @@ $(function(){
   var sidebarObj = $('#sidebar');
   var allObj = $('#all');
   var oldestId = '0000000000000000000000000000000000000000000000000';
-  function deleteOutDiv(id_str){
-    var id = '#'+id_str;
-    if($(id).length){
-      var uid = '#' + $(id).attr("class");
-      $(uid+'.sidebar a span.badge').text(function(i,v){return --v;});
+  var deleteOutDiv = function(id_str){
+    var jQid = '#'+id_str;
+    var idObj = $(jQid);
+    if(idObj.length){
+      $('#'+idObj.attr("class")+'.sidebar a span.badge').text(function(i,v){return --v;});
       $('#all.sidebar a span.badge').text(function(i,v){return --v;});
       $('#mentions.sidebar a span.badge').text(function(i,v){return --v;});
     }
-    $(id).before($(id+'>div').css('margin-left','0px'));
-    $(id).remove();
+    idObj.before($(jQid+'>div').css('margin-left','0px'));
+    idObj.remove();
+  }
+  var isMention = function(str){
+    if(str.match('@'+name)){
+      $('#mentions.sidebar a span.badge').text(function(i,v){return ++v;});
+      return ' mentions';
+    }else{
+      return '';
+    }
   }
   socket.on('message', function(message){
     var re = /((http|https|ftp):\/\/[\w?=&.\/-;#~%-]+(?![\w\s?&.\/;#~%"=-]*>))/g;//Thanks to http://kawika.org/jquery/js/jquery.autolink.js
     var af = '<a href="$1" target="_blank">$1</a> ';
-    function mkLink(str){
+    var mkLink = function(str){
       return str.replace(re, af);
     }
     $.fn.hoverBio = function(target){
@@ -64,68 +72,62 @@ $(function(){
       deleteOutDiv(message['delete'].status.id_str);
     }else{
       if(message.text){
-        var data = message;
-        var id = '#'+data.id_str;
-        var uid = '#'+data.user.id_str;
+        var user = message.user;
+        var id = message.id_str;
+        var uid = user.id_str;
+        var jQid = '#'+id;
+        var jQuid = '#'+uid;
 
-        var len1 = data.id_str.length;
-        var len2 = oldestId.length;
         var scroll = false;
-        if((len1===len2 && data.id_str<oldestId) || len1<len2){
-          oldestId = data.id_str;
+        if((id.length===oldestId.length && id<oldestId) || id.length<oldestId.length){
+          oldestId = id;
           scroll = true;
         }
 
-        var p_str = '<p><a href="#" onclick="select(\''+data.user.id_str+'\');"><img src="'+data.user.profile_image_url+'" class="profile"/></a> '+mkLink(data.text)+'</p><span class="permalink"><span><time class="sec" datetime="'+data.created_at+'"></time> via</span> '+data.source+' | </span>';
-        var d_str = '<div id='+data.id_str+' class="'+data.user.id_str+isMention(data.text)+'">'+p_str+'</div>';
-        var rp_str = '<a onclick="reply(\''+data.id_str+'\',\''+data.user.screen_name+'\');" href="#">Reply</a>';
-        var rt_str = '<a onclick="retweet(\''+data.id_str+'\');" href="#">Retweet</a>';
-        var dl_str = '<a onclick="destroy(\''+data.id_str+'\');" href="#">Delete</a>';
-        var bioObj = $('<div id='+data.user.id_str+' class="sidebar" onclick="select(\''+data.user.id_str+'\');"><a href="#"><img src="'+data.user.profile_image_url+'" /> (<span class="badge">0</span>) '+data.user.screen_name+'</a><div class="bio"><img src="'+data.user.profile_image_url+'" /><span><b class="fullname">'+data.user.name+'</b><br/><span>@'+data.user.screen_name+'</span><br/>'+data.user.location+'<br/><b>Web:</b> '+mkLink(''+data.user.url)+'<br/><b>Bio:</b> '+data.user.description+'</span></div></div>').hoverBio();
-        if(scroll || !($(id).length)){
-          if($(id).length){
-            $(id).html(p_str).addClass(data.user.id_str);
+        var p_str = '<p><a href="#" onclick="select(\''+uid+'\');"><img src="'+user.profile_image_url+'" class="profile"/></a> '+mkLink(message.text)+'</p><span class="permalink"><span><time class="sec" datetime="'+message.created_at+'"></time> via</span> '+message.source+' | </span>';
+        var d_str = '<div id='+id+' class="'+uid+isMention(message.text)+'">'+p_str+'</div>';
+        var rp_str = '<a onclick="reply(\''+id+'\',\''+user.screen_name+'\');" href="#">Reply</a>';
+        var rt_str = '<a onclick="retweet(\''+id+'\');" href="#">Retweet</a>';
+        var dl_str = '<a onclick="destroy(\''+id+'\');" href="#">Delete</a>';
+        var bioObj = $('<div id='+uid+' class="sidebar" onclick="select(\''+uid+'\');"><a href="#"><img src="'+user.profile_image_url+'" /> (<span class="badge">0</span>) '+user.screen_name+'</a><div class="bio"><img src="'+user.profile_image_url+'" /><span><b class="fullname">'+user.name+'</b><br/><span>@'+user.screen_name+'</span><br/>'+user.location+'<br/><b>Web:</b> '+mkLink(''+user.url)+'<br/><b>Bio:</b> '+user.description+'</span></div></div>').hoverBio();
+        var idObj = $(jQid);
+        var uidObj = $(jQuid);
+        if(scroll || !(idObj.length)){
+          if(idObj.length){
+            idObj.html(p_str).addClass(uid);
           }else if(scroll){
             chatObj.append(d_str);
           }else{
             chatObj.prepend(d_str);
           }
-          $(id).hoverPic();
-          if(data.user.screen_name===name){
-            $(id).append('<span class="permalink">'+rp_str+' - '+dl_str+'</span>');
+          idObj.hoverPic();
+          if(user.screen_name===name){
+            $(jQid).append('<span class="permalink">'+rp_str+' - '+dl_str+'</span>');
           }else{
-            $(id).append('<span class="permalink">'+rt_str+' - '+rp_str+'</span>');
+            $(jQid).append('<span class="permalink">'+rt_str+' - '+rp_str+'</span>');
           }
-          if(data.user.id_str!=selected_id && selected_id != 'all'){
-            $(id).hide();
+          if(uid!=selected_id && selected_id != 'all'){
+            $(jQid+'> :not(:has(.'+selected_id+'), .'+selected_id+')').hide();
           }
-          if(data.in_reply_to_status_id_str){
+          if(message.in_reply_to_status_id_str){
             if(scroll){
-              $(id).append('<div id='+data.in_reply_to_status_id_str+' style="margin-left: 14px;"></div>');
+              $(jQid).append('<div id='+message.in_reply_to_status_id_str+' style="margin-left: 14px;"></div>');
             }else{
-              $(id).append($('#'+data.in_reply_to_status_id_str).css('margin-left', '14px'));
+              $(jQid).append($('#'+message.in_reply_to_status_id_str).css('margin-left', '14px'));
             }
           }
-          if(!($(uid).length)){
+          if(!(uidObj.length)){
             if(scroll){
               sidebarObj.append(bioObj);
             }else{
               allObj.after(bioObj);
             }
           }else if(!scroll){
-            allObj.after($(uid));
+            allObj.after(uidObj);
           }
-          $(uid+'.sidebar a span.badge').text(function(i,v){return ++v;});
+          $(jQuid+'.sidebar a span.badge').text(function(i,v){return ++v;});
           $('#all.sidebar a span.badge').text(function(i,v){return ++v;});
-          $(id+' p a img.profile').hoverBio(uid);
-          function isMention(str){
-            if(str.match('@'+name)){
-              $('#mentions.sidebar a span.badge').text(function(i,v){return ++v;});
-              return ' mentions';
-            }else{
-              return '';
-            }
-          }
+          $(jQid+' p a img.profile').hoverBio(jQuid);
         }
       }else{
         console.log(message);
@@ -161,6 +163,9 @@ $(function(){
       e.preventDefault();
     }
   });
+  textObj.keyup(function(e){
+    $('#countChar').text(140-$(this).text().length);
+  });
 
   socket.on('disconnect', function(){
     setTimeout("window.location.reload()", 10000);
@@ -193,7 +198,7 @@ $(function(){
     var text = textObj.text();
     
     if (text && name) {
-      socket.send({user: {screen_name: name}, text: text, created_at: (new Date()).toString(), in_reply_to_status_id: reply_id});
+      socket.send({text: text, in_reply_to_status_id: reply_id});
       textObj.text('');
       reply_id = '';
       textObj.focus();
