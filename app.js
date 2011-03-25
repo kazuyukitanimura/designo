@@ -48,7 +48,7 @@ app.get('/', function(req, res){
       screenName = req.session.oauth._results.screen_name;
     }catch(e){
       console.error("screen_name ERROR: " + e);
-      setTimeout(res.redirect('/'), 3000);
+      setTimeout(function(){res.redirect('/')}, 3000);
     }
   }
   res.render(jadeFile, {
@@ -169,7 +169,7 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res) {
       stream.on('error', function(err){
         console.error('UserStream ERROR: ' + err);
         console.log('graceful restarting in 30 seconds');
-        setTimeout((function(params){stream = user.openUserStream(params)})(params), 30000);
+        setTimeout(function(){stream = user.openUserStream(params)}, 30000);
       });
       stream.on('end', function(){
         console.log('UserStream ends successfully');
