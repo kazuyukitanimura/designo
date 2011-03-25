@@ -61,7 +61,7 @@ function Twitter(consumerKey, consumerSecret, options){
 
   this._apiUrl = options.apiUrl || API_URL;
   this._streamUrl = options.streamUrl || STREAM_URL;
-};
+}
 /**
  * Normalize the error as an Error object.
  *
@@ -83,7 +83,7 @@ function normalizeError(err){
     return e;
   }else{
     // unknown error
-    return new Error(e);
+    return new Error(err);
   }
 }
 
@@ -105,15 +105,15 @@ Twitter.prototype.getRequestToken = function(callback){
   var self = this;
   this._oa.getOAuthRequestToken(function(err, token, token_secret, results){
     if(err){
-      callback && callback(normalizeError(err));
+      if(callback){callback(normalizeError(err));}
     }else{
       self._token = token;
       self._token_secret = token_secret;
       self._token_results = results;
-      callback && callback(null, AUTHORIZE_URL + token);
+      if(callback){callback(null, AUTHORIZE_URL + token);}
     }
   });
-}
+};
 
 Twitter.prototype.getAccessToken = function(verifier, callback){
   var self = this;
@@ -121,15 +121,15 @@ Twitter.prototype.getAccessToken = function(verifier, callback){
     self._token, self._token_secret, verifier,
     function(error, akey, asecret, results2){
       if(error){
-        callback && callback(normalizeError(error));
+        if(callback){callback(normalizeError(error));}
       }else{
         self.accessKey = akey;
         self.accessSecret = asecret;
         self._results = results2;
-        callback && callback(null, akey, asecret);
+        if(callback){callback(null, akey, asecret);}
       }
     });
-}
+};
 
 // -----------------------------------------------------------------------------
 // Tweets Resources
@@ -231,7 +231,7 @@ Twitter.prototype.getListStatuses = function(user, id, params, callback){
   }
   var path = ['', user, 'lists', id, 'statuses'].join('/') + '.json';
   this._doGet(path, params, callback);
-}
+};
 
 // -----------------------------------------------------------------------------
 // Account Resources
@@ -264,7 +264,7 @@ function UserStream(client, request){
     if( jsonStr ){
       var obj = undefined;
       try{
-        obj = JSON.parse(jsonStr);;
+        obj = JSON.parse(jsonStr);
       }catch(e){
         // ignore invalid JSON string from twitter.
       }
@@ -322,7 +322,7 @@ function UserStream(client, request){
       }
     });
   });
-};
+}
 util.inherits(UserStream, EventEmitter);
 UserStream.prototype.end = function(callback){
   // TODO force to quit stream connection.
@@ -330,14 +330,14 @@ UserStream.prototype.end = function(callback){
   if( self.started ){
     console.log('end');
     self._request.connection.destroy();
-    callback && callback();
+    if(callback){callback();}
   }else{
     this._request.on('response', function(response){
       self._request.connection.destroy();
-      callback && callback();
+      if(callback){callback();}
     });
   }
-}
+};
 UserStream.prototype.__defineGetter__('client', function(){
   return this._client;
 });
@@ -349,7 +349,7 @@ Twitter.prototype.openUserStream = function(params, callback){
   debug("GET " + uri);
   var request = this._oa.get(uri, this.accessKey, this.accessSecret);
   return new UserStream(this, request);
-}
+};
 
 // -----------------------------------------------------------------------------
 // Private methods for Twitter class

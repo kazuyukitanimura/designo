@@ -31,7 +31,7 @@ $(function(){
     }
   };
   socket.on('message', function(message){
-    var re = /((http|https|ftp):\/\/[\w?=&.\/-;#~%-]+(?![\w\s?&.\/;#~%"=-]*>))/g;//Thanks to http://kawika.org/jquery/js/jquery.autolink.js
+    var re = /((http|https|ftp):\/\/[\w?=&.\/-;#~%\-]+(?![\w\s?&.\/;#~%"=\-]*>))/g;//Thanks to http://kawika.org/jquery/js/jquery.autolink.js
     var af = '<a href="$1" target="_blank">$1</a> ';
     var mkLink = function(str){
       return str.replace(re, af);
@@ -179,11 +179,15 @@ $(function(){
     return false;
   };
 
-  var reid = /(@[\w?=&.\/-9;#~%-]+(?![\w\s?&.\/;#~%"=-]*>))/g;
+  var reid = /(@[\w?=&.\/-9;#~%\-]+(?![\w\s?&.\/;#~%"=\-]*>))/g;
   this.reply = function(id_str, screen_name){
     var ats = $('#'+id_str).text().match(reid);
     var redundant = new RegExp('@('+screen_name+'|'+name+') ','g');
-    ats ? textObj.text('@'+screen_name+' '+(jQuery.unique(ats).join(' ')+' ').replace(redundant, '')) : textObj.text('@'+screen_name+' ');
+    if(ats){
+      textObj.text('@'+screen_name+' '+(jQuery.unique(ats).join(' ')+' ').replace(redundant, ''));
+    }else{
+      textObj.text('@'+screen_name+' ');
+    }
     textObj.focus();
     reply_id = id_str;
     return false;

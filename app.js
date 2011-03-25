@@ -9,6 +9,9 @@ var express = require('express'),
 
 var app = module.exports = express.createServer();
 
+var consumerKey = "your consumer key";
+var consumerSecret = "your consumer secret";
+
 // Configuration
 
 app.configure(function(){
@@ -19,7 +22,7 @@ app.configure(function(){
   app.use(express.methodOverride());
   app.use(express.compiler({ src: __dirname + '/public', enable: ['less'] }));
   app.use(app.router);
-  app.use(express.static(__dirname + '/public'));
+  app.use(express['static'](__dirname + '/public'));
   app.use(express.logger({ format: ':method :url' }));
 });
 
@@ -39,7 +42,7 @@ app.get('/', function(req, res){
   var jadeFile = 'login.jade';
   var loginMessage = "Login with Twitter!";
   var loginTo = "/login";
-  var screenName = 'Twitter ID'
+  var screenName = 'Twitter ID';
   if (req.session.oauth) {
     jadeFile = 'index.jade';
     loginMessage = "Logout";
@@ -48,7 +51,7 @@ app.get('/', function(req, res){
       screenName = req.session.oauth._results.screen_name;
     }catch(e){
       console.error("screen_name ERROR: " + e);
-      setTimeout(function(){res.redirect('/')}, 3000);
+      setTimeout(function(){res.redirect('/');}, 3000);
     }
   }
   res.render(jadeFile, {
@@ -60,31 +63,6 @@ app.get('/', function(req, res){
 });
 
 app.get('/login', function(req, res){
-  authorize(req, res);
-});
-
-app.get('/logout', function(req, res){
-  req.session.destroy(function(){
-    res.redirect('/');
-  });
-});
-
-app.get('/authorized', function(req, res){
-  authorized(req, res);
-});
-
-// Only listen on $ node app.js
-
-if (!module.parent) {
-  app.listen(8080);
-  console.log("Express server listening on port %d", app.address().port);
-}
-
-// --- controllers
-var consumerKey = "your consumer key";
-var consumerSecret = "your consumer secret";
-
-function authorize(req, res){
   var tw = new twitter(consumerKey, consumerSecret);
   tw.getRequestToken(function(error, url){
     if(error) {
@@ -96,10 +74,16 @@ function authorize(req, res){
       res.redirect(url);
     }
   });
-}
+});
+
+app.get('/logout', function(req, res){
+  req.session.destroy(function(){
+    res.redirect('/');
+  });
+});
 
 // authorized callback from twitter.com
-function authorized(req, res){
+app.get('/authorized', function(req, res){
   if( !req.session.oauth ){
     res.redirect('/'); // invalid callback url access;
   } else {
@@ -112,14 +96,24 @@ function authorized(req, res){
       }
     });
   }
+});
+
+// Only listen on $ node app.js
+
+if (!module.parent) {
+  app.listen(8080);
+  console.log("Express server listening on port %d", app.address().port);
 }
 
 var socket = io.listen(app);
-socket.tid2sid = {}
+socket.tid2sid = {};
 socket.broadcastTo = function(message, to){ //to has to be an Array
   try {
     for (var i = 0, l = to.length; i < l; i++){
-      if(this.tid2sid[to[i]]) this.clients[this.tid2sid[to[i]]].send(message);
+      if(this.tid2sid[to[i]]){
+        this.clients[this.tid2sid[to[i]]].send(message);
+      }
+      //console.log(this.tid2sid[to[i]]);
     }
   }catch(e) {
     console.error("broadcastTo ERROR: "+e);
@@ -133,7 +127,9 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res) {
   count++;
   client.broadcast({count: count});
   client.send({count: count});
-  if(count>maxcount) console.log("maxcount: "+(maxcount=count));
+  if(count>maxcount){
+    console.log("maxcount: "+(maxcount=count));
+  }
 
     var user = req.session.oauth;
     if(user) {
@@ -143,7 +139,7 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res) {
         console.error('socket.tid2sid ERROR: ' + e);
       }
       //view home
-      function scroll (page) {
+      var scroll = function(page) {
         user.getTimeline(page, function(error, data, response){
           if(error) {
             console.error("TIMELLINE ERROR: " + error);
@@ -151,7 +147,7 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res) {
             client.send(data);
           }
         });
-      }
+      };
       scroll({page: 1});
       //user streams
       var params = {};
@@ -169,7 +165,7 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res) {
       stream.on('error', function(err){
         console.error('UserStream ERROR: ' + err);
         console.log('graceful restarting in 30 seconds');
-        setTimeout(function(){stream = user.openUserStream(params)}, 30000);
+        setTimeout(function(){stream = user.openUserStream(params);}, 30000);
       });
       stream.on('end', function(){
         console.log('UserStream ends successfully');
