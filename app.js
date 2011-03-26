@@ -4,6 +4,7 @@
  */
 
 var express = require('express'),
+    RedisStore = require('connect-redis'),
     io = require('socket.io'),
     twitter = require('./twitter');
 
@@ -17,7 +18,7 @@ var consumerSecret = "your consumer secret";
 app.configure(function(){
   app.set('views', __dirname + '/views');
   app.use(express.cookieParser());
-  app.use(express.session({ secret: 'himitsu', fingerprint: "" }));
+  app.use(express.session({ secret: 'himitsu', fingerprint: "", store: new RedisStore() }));
   app.use(express.bodyParser());
   app.use(express.methodOverride());
   app.use(express.compiler({ src: __dirname + '/public', enable: ['less'] }));
@@ -43,7 +44,7 @@ app.get('/', function(req, res){
   var loginMessage = "Login with Twitter!";
   var loginTo = "/login";
   var screenName = 'Twitter ID';
-  if (req.session.oauth) {
+  if(req.session.oauth){
     jadeFile = 'index.jade';
     loginMessage = "Logout";
     loginTo = "/logout";
@@ -65,11 +66,11 @@ app.get('/', function(req, res){
 app.get('/login', function(req, res){
   var tw = new twitter(consumerKey, consumerSecret);
   tw.getRequestToken(function(error, url){
-    if(error) {
+    if(error){
       console.error(error);
       res.writeHead(500, {'Content-Type': 'text/html'});
       res.send('ERROR :' + error);
-    }else {
+    }else{
       req.session.oauth = tw;
       res.redirect(url);
     }
@@ -86,12 +87,14 @@ app.get('/logout', function(req, res){
 app.get('/authorized', function(req, res){
   if( !req.session.oauth ){
     res.redirect('/'); // invalid callback url access;
-  } else {
-    req.session.oauth.getAccessToken(req.query.oauth_verifier, function(error){
-      if(error) {
+  }else{
+    var tw = new twitter(consumerKey, consumerSecret, req.session.oauth);
+    tw.getAccessToken(req.query.oauth_verifier, function(error){
+      if(error){
         console.error(error);
         res.send(error);
       }else{
+        req.session.oauth = tw;
         res.redirect('/');
       }
     });
@@ -108,14 +111,14 @@ if (!module.parent) {
 var socket = io.listen(app);
 socket.tid2sid = {};
 socket.broadcastTo = function(message, to){ //to has to be an Array
-  try {
-    for (var i = 0, l = to.length; i < l; i++){
+  try{
+    for(var i = 0, l = to.length; i < l; i++){
       if(this.tid2sid[to[i]]){
         this.clients[this.tid2sid[to[i]]].send(message);
       }
       //console.log(this.tid2sid[to[i]]);
     }
-  }catch(e) {
+  }catch(e){
     console.error("broadcastTo ERROR: "+e);
   }
   return this;
@@ -123,7 +126,7 @@ socket.broadcastTo = function(message, to){ //to has to be an Array
 var count = 0;
 var maxcount = 0;
 require('socket.io-connect');
-socket.on('connection', socket.prefixWithMiddleware(function(client,req,res) {
+socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
   count++;
   client.broadcast({count: count});
   client.send({count: count});
@@ -131,19 +134,19 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res) {
     console.log("maxcount: "+(maxcount=count));
   }
 
-    var user = req.session.oauth;
-    if(user) {
+    if(req.session.oauth){
+      var tw = new twitter(consumerKey, consumerSecret, req.session.oauth);
       try{
-        socket.tid2sid[user._results.user_id] = client.sessionId;
+        socket.tid2sid[tw._results.user_id] = client.sessionId;
       }catch(e){
         console.error('socket.tid2sid ERROR: ' + e);
       }
       //view home
-      var scroll = function(page) {
-        user.getTimeline(page, function(error, data, response){
-          if(error) {
+      var scroll = function(page){
+        tw.getTimeline(page, function(error, data, response){
+          if(error){
             console.error("TIMELLINE ERROR: " + error);
-          } else{
+          }else{
             client.send(data);
           }
         });
@@ -151,11 +154,11 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res) {
       scroll({page: 1});
       //user streams
       var params = {};
-      var stream = user.openUserStream(params);
+      var stream = tw.openUserStream(params);
       stream.on('data', function(data){
         try{
-          if(data.friends) {
-          } else {
+          if(data.friends){
+          }else{
             client.send(data);
           }
         }catch(e){
@@ -165,56 +168,56 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res) {
       stream.on('error', function(err){
         console.error('UserStream ERROR: ' + err);
         console.log('graceful restarting in 30 seconds');
-        setTimeout(function(){stream = user.openUserStream(params);}, 30000);
+        setTimeout(function(){stream = tw.openUserStream(params);}, 30000);
       });
       stream.on('end', function(){
         console.log('UserStream ends successfully');
       });
     }
 
-    client.on('message', function(message) {
+    client.on('message', function(message){
       //message
-      if(user) {
+      if(tw){
         //manage followers
-        if(!client.followers) {
-          user.followers(function(error, data, response){
-            if(error) {
+        if(!client.followers){
+          tw.followers(function(error, data, response){
+            if(error){
               console.error("FOLLOWERS ERROR: " + error);
-            } else{
+            }else{
               client.followers = data;
             }
           });
         }
-        if(message.text) {
-          user.update(message, function(error, data, response){
-            if(error) {
-              console.error("UPDATE ERROR\ndata: "+data+"response: "+response+"oauth: "+user+"message: "+message);
-            } else{
+        if(message.text){
+          tw.update(message, function(error, data, response){
+            if(error){
+              console.error("UPDATE ERROR\ndata: "+data+"response: "+response+"oauth: "+tw+"message: "+message);
+            }else{
               client.send(data);
               socket.broadcastTo(data, client.followers);
             }
           });
-        } else if(message.retweet){
-          user.retweet(message.retweet.status.id_str, function(error, data, response){
-            if(error) {
-              console.error("RETWEET ERROR\ndata: "+data+"response: "+response+"oauth: "+user+"message: "+message);
-            } else{
+        }else if(message.retweet){
+          tw.retweet(message.retweet.status.id_str, function(error, data, response){
+            if(error){
+              console.error("RETWEET ERROR\ndata: "+data+"response: "+response+"oauth: "+tw+"message: "+message);
+            }else{
               client.send(data);
               socket.broadcastTo(data, client.followers);
             }
           });
-        } else if(message.destroy){
-          user.destroy(message.destroy.status.id_str, function(error, data, response){
-            if(error) {
-              console.error("DELETE ERROR\ndata: "+data+"response: "+response+"oauth: "+user+"message: "+message);
+        }else if(message.destroy){
+          tw.destroy(message.destroy.status.id_str, function(error, data, response){
+            if(error){
+              console.error("DELETE ERROR\ndata: "+data+"response: "+response+"oauth: "+tw+"message: "+message);
             }
           });
-        } else if(message.scroll){
+        }else if(message.scroll){
           scroll(message.scroll);
         }
       }
     });
-  client.on('disconnect', function() { //disconnect
+  client.on('disconnect', function(){ //disconnect
     count--;
     client.broadcast({count: count});
   });

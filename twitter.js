@@ -58,9 +58,12 @@ function Twitter(consumerKey, consumerSecret, options){
     );
   this.accessKey = options.accessKey;
   this.accessSecret = options.accessSecret;
+  this._token = options._token;
+  this._token_secret = options._token_secret;
+  this._results = options._results;
 
-  this._apiUrl = options.apiUrl || API_URL;
-  this._streamUrl = options.streamUrl || STREAM_URL;
+  this._apiUrl = options._apiUrl || API_URL;
+  this._streamUrl = options._streamUrl || STREAM_URL;
 }
 /**
  * Normalize the error as an Error object.

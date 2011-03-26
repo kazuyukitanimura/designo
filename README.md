@@ -2,9 +2,10 @@
 This is a Twitter client demo with Node.js+Websocket+HTML5. Enjoy realtime tweeting.
 
 ## Requrements:
-- [Express](http://github.com/visionmedia/express/tree/master)
-- [Jade](http://github.com/visionmedia/jade)
-- [less.js](http://github.com/cloudhead/less.js)
+- [Express](https://github.com/visionmedia/express)
+- [connect-redis](https://github.com/visionmedia/connect-redis)
+- [Jade](https://github.com/visionmedia/jade)
+- [less.js](https://github.com/cloudhead/less.js)
 - [Socket.IO-node](https://github.com/LearnBoost/Socket.IO-node)
 - [node-oauth](https://github.com/ciaranj/node-oauth)
 - [kazuyukitanimura/Socket.IO-connect](https://github.com/kazuyukitanimura/Socket.IO-connect)
@@ -22,7 +23,6 @@ More details will be explained at my blog, [http://hobbycoding.posterous.com/](h
 - Safari
 
 ### Node.js version
-- v0.4.2
 - v0.4.3
 
 ## License
