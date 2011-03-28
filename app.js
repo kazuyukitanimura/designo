@@ -52,7 +52,7 @@ app.get('/', function(req, res){
       screenName = req.session.oauth._results.screen_name;
     }catch(e){
       console.error("screen_name ERROR: " + e);
-      setTimeout(function(){res.redirect('/');}, 3000);
+      setTimeout(function(){res.redirect('/');}, 500);
     }
   }
   res.render(jadeFile, {
@@ -109,14 +109,14 @@ if (!module.parent) {
 }
 
 var socket = io.listen(app);
-socket.tid2sid = {};
+socket.tid2clt = {};
 socket.broadcastTo = function(message, to){ //to has to be an Array
   try{
-    for(var i = 0, l = to.length; i < l; i++){
-      if(this.tid2sid[to[i]]){
-        this.clients[this.tid2sid[to[i]]].send(message);
+    for(var i=0, l=to.length; i<l; ++i){
+      var clt = this.tid2clt[to[i]];
+      if(clt){
+        clt.send(message);
       }
-      //console.log(this.tid2sid[to[i]]);
     }
   }catch(e){
     console.error("broadcastTo ERROR: "+e);
@@ -134,89 +134,89 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
     console.log("maxcount: "+(maxcount=count));
   }
 
-    if(req.session.oauth){
-      var tw = new twitter(consumerKey, consumerSecret, req.session.oauth);
-      try{
-        socket.tid2sid[tw._results.user_id] = client.sessionId;
-      }catch(e){
-        console.error('socket.tid2sid ERROR: ' + e);
-      }
-      //view home
-      var scroll = function(page){
-        tw.getTimeline(page, function(error, data, response){
-          if(error){
-            console.error("TIMELLINE ERROR: " + error);
-          }else{
-            client.send(data);
-          }
-        });
-      };
-      scroll({page: 1});
-      //user streams
-      var params = {};
-      var stream = tw.openUserStream(params);
-      stream.on('data', function(data){
-        try{
-          if(data.friends){
-          }else{
-            client.send(data);
-          }
-        }catch(e){
-          console.error('dispatch event ERROR: ' + e);
-        }
-      });
-      stream.on('error', function(err){
-        console.error('UserStream ERROR: ' + err);
-        console.log('graceful restarting in 30 seconds');
-        setTimeout(function(){stream = tw.openUserStream(params);}, 30000);
-      });
-      stream.on('end', function(){
-        console.log('UserStream ends successfully');
-      });
+  if(req.session.oauth){
+    var tw = new twitter(consumerKey, consumerSecret, req.session.oauth);
+    try{
+      socket.tid2clt[tw._results.user_id] = client;
+    }catch(e){
+      console.error('socket.tid2sid ERROR: ' + e);
     }
-
-    client.on('message', function(message){
-      //message
-      if(tw){
-        //manage followers
-        if(!client.followers){
-          tw.followers(function(error, data, response){
-            if(error){
-              console.error("FOLLOWERS ERROR: " + error);
-            }else{
-              client.followers = data;
-            }
-          });
+    //view home
+    var scroll = function(page){
+      tw.getTimeline(page, function(error, data, response){
+        if(error){
+          console.error("TIMELLINE ERROR: " + error);
+        }else{
+          client.send(data);
         }
-        if(message.text){
-          tw.update(message, function(error, data, response){
-            if(error){
-              console.error("UPDATE ERROR\ndata: "+data+"response: "+response+"oauth: "+tw+"message: "+message);
-            }else{
-              client.send(data);
-              socket.broadcastTo(data, client.followers);
-            }
-          });
-        }else if(message.retweet){
-          tw.retweet(message.retweet.status.id_str, function(error, data, response){
-            if(error){
-              console.error("RETWEET ERROR\ndata: "+data+"response: "+response+"oauth: "+tw+"message: "+message);
-            }else{
-              client.send(data);
-              socket.broadcastTo(data, client.followers);
-            }
-          });
-        }else if(message.destroy){
-          tw.destroy(message.destroy.status.id_str, function(error, data, response){
-            if(error){
-              console.error("DELETE ERROR\ndata: "+data+"response: "+response+"oauth: "+tw+"message: "+message);
-            }
-          });
-        }else if(message.scroll){
-          scroll(message.scroll);
+      });
+    };
+    scroll({page: 1});
+    //user streams
+    var params = {};
+    var stream = tw.openUserStream(params);
+    stream.on('data', function(data){
+      try{
+        if(data.friends){
+        }else{
+          client.send(data);
         }
+      }catch(e){
+        console.error('dispatch event ERROR: ' + e);
       }
     });
+    stream.on('error', function(err){
+      console.error('UserStream ERROR: ' + err);
+      console.log('graceful restarting in 30 seconds');
+      setTimeout(function(){stream = tw.openUserStream(params);}, 30000);
+    });
+    stream.on('end', function(){
+      console.log('UserStream ends successfully');
+    });
+  }
+
+  client.on('message', function(message){
+    //message
+    if(tw){
+      //manage followers
+      if(!client.followers){
+        tw.followers(function(error, data, response){
+          if(error){
+            console.error("FOLLOWERS ERROR: " + error);
+          }else{
+            client.followers = data;
+          }
+        });
+      }
+      if(message.text){
+        tw.update(message, function(error, data, response){
+          if(error){
+            console.error("UPDATE ERROR\ndata: "+data+"response: "+response+"oauth: "+tw+"message: "+message);
+          }else{
+            client.send(data);
+            socket.broadcastTo(data, client.followers);
+          }
+        });
+      }else if(message.retweet){
+        tw.retweet(message.retweet.status.id_str, function(error, data, response){
+          if(error){
+            console.error("RETWEET ERROR\ndata: "+data+"response: "+response+"oauth: "+tw+"message: "+message);
+          }else{
+            client.send(data);
+            socket.broadcastTo(data, client.followers);
+          }
+        });
+      }else if(message.destroy){
+        tw.destroy(message.destroy.status.id_str, function(error, data, response){
+          if(error){
+            console.error("DELETE ERROR\ndata: "+data+"response: "+response+"oauth: "+tw+"message: "+message);
+          }
+        });
+      }else if(message.scroll){
+        scroll(message.scroll);
+      }
+    }
+  });
   client.on('disconnect', function(){ //disconnect
     count--;
     client.broadcast({count: count});

@@ -37,16 +37,15 @@ $(function(){
       return str.replace(re, af);
     };
     $.fn.hoverBio = function(target){
-      target = target||this;
-      return this.each(function(){
-        $(this).hover(
-          function(e){
-            $(target).children(".bio").css("left",e.pageX+10).css("top",e.pageY).show();
-          },function(){
-            $(target).children(".bio").hide();
-          } 
-        );
-      });
+      var thisObj = $(this[0]);
+      var targetObj = target||thisObj;
+      return thisObj.hover(
+        function(e){
+          targetObj.children(".bio").css("left",e.pageX+10).css("top",e.pageY).show();
+        },function(){
+          targetObj.children(".bio").hide();
+        } 
+      );
     };
     $.fn.hoverPic = function(){
       return this.each(function(){
@@ -102,7 +101,7 @@ $(function(){
           }else{
             chatObj.prepend(d_str);
           }
-          idObj.hoverPic();
+          $(jQid).hoverPic();
           if(user.screen_name===name){
             $(jQid).append('<span class="permalink">'+rp_str+' - '+dl_str+'</span>');
           }else{
@@ -124,12 +123,13 @@ $(function(){
             }else{
               allObj.after(bioObj);
             }
+            uidObj = $(jQuid);
           }else if(!scroll){
             allObj.after(uidObj);
           }
           $(jQuid+'.sidebar a span.badge').text(function(i,v){return ++v;});
           $('#all.sidebar a span.badge').text(function(i,v){return ++v;});
-          $(jQid+' p a img.profile').hoverBio(jQuid);
+          $(jQid+' p a img.profile').hoverBio(uidObj);
         }
       }else{
         console.log(message);
