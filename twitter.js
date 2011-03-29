@@ -5,12 +5,12 @@ var util = require('util'),
     querystring = require('querystring'),
     crypto = require('crypto'),
     http = require('http'),
-    EventEmitter = require('events').EventEmitter;
-var OAuth = require('oauth').OAuth;
+    EventEmitter = require('events').EventEmitter,
+    OAuth = require('oauth').OAuth;
 
 // for debugging
-var debug;
-var debugLevel = parseInt(process.env.NODE_DEBUG, 16);
+var debug,
+    debugLevel = parseInt(process.env.NODE_DEBUG, 16);
 if (debugLevel & 0x4) {
   debug = function (x) { util.error('[twbot/Twitter]: ' + x); };
 } else {
@@ -21,18 +21,18 @@ if (debugLevel & 0x4) {
  * OAuth Configuration constants
  */
 var OAUTH_CONFIG = {
-  RequestTokenUrl : "https://api.twitter.com/oauth/request_token",
-  AccessTokenUrl : "https://api.twitter.com/oauth/access_token",
-  Version : "1.0",
-  Method  : "HMAC-SHA1"
+  RequestTokenUrl : 'https://api.twitter.com/oauth/request_token',
+  AccessTokenUrl : 'https://api.twitter.com/oauth/access_token',
+  Version : '1.0',
+  Method  : 'HMAC-SHA1'
 };
 
 /**
  * Twitter API endpoint URL
  */
-var API_URL = "https://api.twitter.com/1";
-var STREAM_URL = "https://userstream.twitter.com/2";
-var AUTHORIZE_URL = "https://twitter.com/oauth/authorize?oauth_token=";
+var API_URL = 'https://api.twitter.com/1',
+    STREAM_URL = 'https://userstream.twitter.com/2',
+    AUTHORIZE_URL = 'https://twitter.com/oauth/authorize?oauth_token=';
 
 /**
  * Twitter API Client
@@ -101,7 +101,7 @@ function buildUrl(path, params){
   if( typeof params == 'object' ){
     qs = querystring.stringify(params);
   }
-  return qs ? path + "?" + qs : path;
+  return qs ? path + '?' + qs : path;
 }
 
 Twitter.prototype.getRequestToken = function(callback){
@@ -177,7 +177,7 @@ Twitter.prototype.follow = function(params, callback){
 user_id: params
     };
   }
-  this._doPost("/friendships/create.json", params, callback);
+  this._doPost('/friendships/create.json', params, callback);
 };
 
 Twitter.prototype.unfollow = function(params, callback){
@@ -186,7 +186,7 @@ Twitter.prototype.unfollow = function(params, callback){
 user_id: params
     };
   }
-  this._doPost("/friendships/delete.json", params, callback);
+  this._doPost('/friendships/delete.json', params, callback);
 };
 
 Twitter.prototype.followers = function(params, callback){
@@ -196,7 +196,7 @@ Twitter.prototype.followers = function(params, callback){
       user_id: this._results.user_id
     };
   }
-  var path = "/followers/ids.json";
+  var path = '/followers/ids.json';
   this._doGet(path, params, callback);
 };
 
@@ -348,8 +348,8 @@ UserStream.prototype.__defineGetter__('client', function(){
 
 Twitter.prototype.openUserStream = function(params, callback){
   // TODO refactoring to be aligned to other methods.
-  var uri = buildUrl([this._streamUrl, "/user.json"].join(''), params);
-  debug("GET " + uri);
+  var uri = buildUrl([this._streamUrl, '/user.json'].join(''), params);
+  debug('GET ' + uri);
   var request = this._oa.get(uri, this.accessKey, this.accessSecret);
   return new UserStream(this, request);
 };
@@ -368,7 +368,7 @@ Twitter.prototype._doGet = function(path, params, callback){
 
 Twitter.prototype._doPost = function(path, body, callback){
   debug('POST ' + path);
-  debug(">> " + util.inspect(body));
+  debug('>> ' + util.inspect(body));
   var url = [this._apiUrl, path].join('');
   this._oa.post(url, this.accessKey, this.accessSecret,
       body,

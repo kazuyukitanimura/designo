@@ -10,15 +10,15 @@ var express = require('express'),
 
 var app = module.exports = express.createServer();
 
-var consumerKey = "your consumer key";
-var consumerSecret = "your consumer secret";
+var consumerKey = 'your consumer key',
+    consumerSecret = 'your consumer secret';
 
 // Configuration
 
 app.configure(function(){
   app.set('views', __dirname + '/views');
   app.use(express.cookieParser());
-  app.use(express.session({ secret: 'himitsu', fingerprint: "", store: new RedisStore() }));
+  app.use(express.session({ secret: 'himitsu', fingerprint: '', store: new RedisStore() }));
   app.use(express.bodyParser());
   app.use(express.methodOverride());
   app.use(express.compiler({ src: __dirname + '/public', enable: ['less'] }));
@@ -28,30 +28,30 @@ app.configure(function(){
 });
 
 app.configure('development', function(){
-  express.logger("development node");
+  express.logger('development node');
   app.use(express.errorHandler({ dumpExceptions: true, showStack: true })); 
 });
 
 app.configure('production', function(){
-  express.logger("production node");
+  express.logger('production node');
   app.use(express.errorHandler()); 
 });
 
 // Routes
 
 app.get('/', function(req, res){
-  var jadeFile = 'login.jade';
-  var loginMessage = "Login with Twitter!";
-  var loginTo = "/login";
-  var screenName = 'Twitter ID';
+  var jadeFile = 'login.jade',
+      loginMessage = 'Login with Twitter!',
+      loginTo = '/login',
+      screenName = 'Twitter ID';
   if(req.session.oauth){
     jadeFile = 'index.jade';
-    loginMessage = "Logout";
-    loginTo = "/logout";
+    loginMessage = 'Logout';
+    loginTo = '/logout';
     try{
       screenName = req.session.oauth._results.screen_name;
     }catch(e){
-      console.error("screen_name ERROR: " + e);
+      console.error('screen_name ERROR: ' + e);
       setTimeout(function(){res.redirect('/');}, 500);
     }
   }
@@ -112,26 +112,26 @@ var socket = io.listen(app);
 socket.tid2clt = {};
 socket.broadcastTo = function(message, to){ //to has to be an Array
   try{
-    for(var i=0, l=to.length; i<l; ++i){
+    for(var i=to.length; i--;){
       var clt = this.tid2clt[to[i]];
       if(clt){
         clt.send(message);
       }
     }
   }catch(e){
-    console.error("broadcastTo ERROR: "+e);
+    console.error('broadcastTo ERROR: '+e);
   }
   return this;
 };
-var count = 0;
-var maxcount = 0;
+var count = 0,
+    maxcount = 0;
 require('socket.io-connect');
 socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
   count++;
   client.broadcast({count: count});
   client.send({count: count});
   if(count>maxcount){
-    console.log("maxcount: "+(maxcount=count));
+    console.log('maxcount: '+(maxcount=count));
   }
 
   if(req.session.oauth){
@@ -145,7 +145,7 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
     var scroll = function(page){
       tw.getTimeline(page, function(error, data, response){
         if(error){
-          console.error("TIMELLINE ERROR: " + error);
+          console.error('TIMELLINE ERROR: ' + error);
         }else{
           client.send(data);
         }
@@ -153,8 +153,8 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
     };
     scroll({page: 1});
     //user streams
-    var params = {};
-    var stream = tw.openUserStream(params);
+    var params = {},
+        stream = tw.openUserStream(params);
     stream.on('data', function(data){
       try{
         if(data.friends){
@@ -182,7 +182,7 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
       if(!client.followers){
         tw.followers(function(error, data, response){
           if(error){
-            console.error("FOLLOWERS ERROR: " + error);
+            console.error('FOLLOWERS ERROR: ' + error);
           }else{
             client.followers = data;
           }
@@ -191,7 +191,7 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
       if(message.text){
         tw.update(message, function(error, data, response){
           if(error){
-            console.error("UPDATE ERROR\ndata: "+data+"response: "+response+"oauth: "+tw+"message: "+message);
+            console.error("UPDATE ERROR\ndata: "+data+'response: '+response+'oauth: '+tw+'message: '+message);
           }else{
             client.send(data);
             socket.broadcastTo(data, client.followers);
@@ -200,7 +200,7 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
       }else if(message.retweet){
         tw.retweet(message.retweet.status.id_str, function(error, data, response){
           if(error){
-            console.error("RETWEET ERROR\ndata: "+data+"response: "+response+"oauth: "+tw+"message: "+message);
+            console.error("RETWEET ERROR\ndata: "+data+'response: '+response+'oauth: '+tw+'message: '+message);
           }else{
             client.send(data);
             socket.broadcastTo(data, client.followers);
@@ -209,7 +209,7 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
       }else if(message.destroy){
         tw.destroy(message.destroy.status.id_str, function(error, data, response){
           if(error){
-            console.error("DELETE ERROR\ndata: "+data+"response: "+response+"oauth: "+tw+"message: "+message);
+            console.error("DELETE ERROR\ndata: "+data+'response: '+response+'oauth: '+tw+'message: '+message);
           }
         });
       }else if(message.scroll){
