@@ -1,3 +1,40 @@
+var SECOND = 1000,
+    MINUTE = SECOND * 60,
+    HOUR   = MINUTE * 60,
+    DAY    = HOUR   * 24,
+    MONTH  = DAY    * 31;
+
+
+$.fn.hoverBio = function(target){
+  var thisObj = $(this[0]),
+      targetObj = target||thisObj;
+  return thisObj.hover(
+    function(e){
+      targetObj.children('.bio').css('left',e.pageX+10).css('top',e.pageY).show();
+    },function(){
+      targetObj.children('.bio').hide();
+    } 
+  );
+};
+
+$.fn.ago = function(){
+  return this.each(function(){
+    var timestamp = Date.parse($(this).attr('datetime')),
+        duration = new Date() - timestamp;
+    if(duration<MINUTE){
+      $(this).text((duration/SECOND).toPrecision(2)+' secconds ago');
+    }else if(duration<HOUR){
+      $(this).attr('class','min').text((duration/MINUTE).toPrecision(2)+' minutes ago');
+    }else if(duration<DAY){
+      $(this).attr('class','hr').text((duration/HOUR).toPrecision(2)+' hours ago');
+    }else if(duration<MONTH){
+      $(this).attr('class','day').text((duration/DAY).toPrecision(2)+' days ago');
+    }else{ 
+      $(this).attr('class','').text(new Date(timestamp).toLocaleString().replace(/GMT.+/,''));
+    }
+  });
+};
+
 $(function(){
   var socket = new io.Socket();
   socket.connect();
@@ -9,62 +46,45 @@ $(function(){
       sidebarObj = $('#sidebar'),
       allObj = $('#all'),
       oldestId = '0000000000000000000000000000000000000000000000000';
+  var increaseBadge = function(j,v){return ++v;};
+  var decreaseBadge = function(j,v){return --v;};
   var deleteOutDiv = function(id_str){
     var jQid = '#'+id_str,
         idObj = $(jQid);
     if(idObj.length){
-      $('#'+idObj.attr('class')+'.sidebar a span.badge').text(function(i,v){return --v;});
-      $('#all.sidebar a span.badge').text(function(i,v){return --v;});
+      $('#'+idObj.attr('class')+'.sidebar a span.badge').text(decreaseBadge);
+      $('#all.sidebar a span.badge').text(decreaseBadge);
       if(idObj.hasClass('mentions')){
-        $('#mentions.sidebar a span.badge').text(function(i,v){return --v;});
+        $('#mentions.sidebar a span.badge').text(decreaseBadge);
       }
     }
     idObj.before($(jQid+'>div').css('margin-left','0px'));
     idObj.remove();
   };
-  var isMention = function(str){
-    if(str.match('@'+name)){
-      $('#mentions.sidebar a span.badge').text(function(i,v){return ++v;});
-      return ' mentions';
-    }else{
-      return '';
-    }
-  };
   socket.on('message', function(message){
-    var re = /((http|https|ftp):\/\/[\w?=&.\/-;#~%\-]+(?![\w\s?&.\/;#~%"=\-]*>))/g,//Thanks to http://kawika.org/jquery/js/jquery.autolink.js
+    //Thanks to http://kawika.org/jquery/js/jquery.autolink.js
+    var re = /((http|https|ftp):\/\/[\w?=&.\/-;#~%\-]+(?![\w\s?&.\/;#~%"=\-]*>))/g,
         af = '<a href="$1" target="_blank">$1</a> ';
+    // ToDO replace the following two functions using entities.urls.indices
     var mkLink = function(str){
       return str.replace(re, af);
     };
-    $.fn.hoverBio = function(target){
-      var thisObj = $(this[0]),
-          targetObj = target||thisObj;
-      return thisObj.hover(
-        function(e){
-          targetObj.children('.bio').css('left',e.pageX+10).css('top',e.pageY).show();
-        },function(){
-          targetObj.children('.bio').hide();
-        } 
-      );
-    };
     $.fn.hoverPic = function(){
-      return this.each(function(){
-        $(this).find('a').each(function(){
-          var href = $(this).attr('href'),
-              twitpic = href.match(/http:\/\/twitpic.com\/(\w+)/) ? 'http://twitpic.com/show/thumb/'+RegExp.$1 : null,
-              yfrog = href.match(/http:\/\/yfrog.com\/(\w+)/) ? 'http://yfrog.com/'+RegExp.$1+':small' : null,
-              plixi= href.match(/http:\/\/plixi.com\/p\/(\w+)/) ? 'http://api.plixi.com/api/tpapi.svc/imagefromurl?size=thumbnail&url='+href : null,
-              url = twitpic||yfrog||plixi;
-          if(url){
-            $(this).append('<img src="'+url+'" class="twitpic"/>').css('font-weight','bold').hover(
-              function(e){
-                $(this).children('img').css('left',e.pageX+10).css('top',e.pageY).show();
-              },function(){
-                $(this).children('img').hide();
-              } 
-            );
-          }
-        });
+      return  $(this[0]).find('a').each(function(){
+        var thisObj = $(this),
+            href = thisObj.attr('href'),
+            url = href.match(/http:\/\/twitpic.com\/(\w+)/) ? 'http://twitpic.com/show/thumb/'+RegExp.$1 :
+                  href.match(/http:\/\/yfrog.com\/(\w+)/) ? 'http://yfrog.com/'+RegExp.$1+':small' :
+                  href.match(/http:\/\/plixi.com\/p\/(\w+)/) ? 'http://api.plixi.com/api/tpapi.svc/imagefromurl?size=thumbnail&url='+href : null;
+        if(url){
+          thisObj.append('<img src="'+url+'" class="twitpic"/>').css('font-weight','bold').hover(
+            function(e){
+              thisObj.children('img').css('left',e.pageX+10).css('top',e.pageY).show();
+            },function(){
+              thisObj.children('img').hide();
+            } 
+          );
+        }
       });
     };
     if(message.count){
@@ -78,14 +98,15 @@ $(function(){
             uid = user.id_str,
             jQid = '#'+id,
             jQuid = '#'+uid,
-            scroll = false;
+            scroll = false,
+            user_mentions = message.entities.user_mentions;
         if((id.length===oldestId.length && id<oldestId) || id.length<oldestId.length){
           oldestId = id;
           scroll = true;
         }
 
-        var p_str = '<p><a href="#" onclick="select(\''+uid+'\');"><img src="'+user.profile_image_url+'" class="profile"/></a> '+mkLink(message.text)+'</p><span class="permalink"><span><time class="sec" datetime="'+message.created_at+'"></time> via</span> '+message.source+' | </span>',
-            d_str = '<div id='+id+' class="'+uid+isMention(message.text)+'">'+p_str+'</div>',
+        var p_str = '<p><a href="#" onclick="select(\''+uid+'\');"><img src="'+user.profile_image_url+'" class="profile"/></a> '+mkLink(message.text)+'</p><span class="permalink"><span><time class="sec" datetime="'+message.created_at+'"></time> from</span> '+message.source+' | </span>',
+            d_str = '<div id='+id+' class="'+uid+'">'+p_str+'</div>',
             rp_str = '<a onclick="reply(\''+id+'\',\''+user.screen_name+'\');" href="#">Reply</a>',
             rt_str = '<a onclick="retweet(\''+id+'\');" href="#">Retweet</a>',
             dl_str = '<a onclick="destroy(\''+id+'\');" href="#">Delete</a>',
@@ -106,9 +127,6 @@ $(function(){
           }else{
             $(jQid).append('<span class="permalink">'+rt_str+' - '+rp_str+'</span>');
           }
-          if(uid!==selected_id && selected_id !== 'all'){
-            $(jQid+' :not(:has(.'+selected_id+'))').parentsUntil('#chat').hide();
-          }
           if(message.in_reply_to_status_id_str){
             if(scroll){
               $(jQid).append('<div id='+message.in_reply_to_status_id_str+' style="margin-left: 14px;"></div>');
@@ -126,8 +144,18 @@ $(function(){
           }else if(!scroll){
             allObj.after(uidObj);
           }
-          $(jQuid+'.sidebar a span.badge').text(function(i,v){return ++v;});
-          $('#all.sidebar a span.badge').text(function(i,v){return ++v;});
+          $(jQuid+'.sidebar a span.badge').text(increaseBadge);
+          $('#all.sidebar a span.badge').text(increaseBadge);
+          for(var i=user_mentions.length; i--;){
+            if(user_mentions[i].screen_name === name){
+              $('#mentions.sidebar a span.badge').text(increaseBadge);
+              $(jQid).addClass('mentions');
+              break;
+            }
+          }
+          if(uid!==selected_id && selected_id !== 'all'){
+            $(jQid+' :not(:has(.'+selected_id+'))').parentsUntil('#chat').hide();
+          }
           $(jQid+' p a img.profile').hoverBio(uidObj);
         }
       }else{
@@ -136,27 +164,10 @@ $(function(){
     }
   });
 
-  $.fn.ago = function(){
-    return this.each(function(){
-      var timestamp = Date.parse($(this).attr('datetime')),
-          duration = new Date() - timestamp;
-      if(duration<60000){
-        $(this).text((duration/1000).toPrecision(2)+' secconds ago');
-      }else if(duration<3600000){
-        $(this).attr('class','min').text((duration/60000).toPrecision(2)+' minutes ago');
-      }else if(duration<86400000){
-        $(this).attr('class','hr').text((duration/3600000).toPrecision(2)+' hours ago');
-      }else if(duration<31*86400000){
-        $(this).attr('class','day').text((duration/86400000).toPrecision(2)+' days ago');
-      }else{ 
-        $(this).attr('class','').text(new Date(timestamp).toLocaleString().replace(/GMT.+/,''));
-      }
-    });
-  };
-  setInterval(function(){ $('time.sec').ago(); },1000);
-  setInterval(function(){ $('time.min').ago(); },60000/6);
-  setInterval(function(){ $('time.hr').ago(); },3600000/4);
-  setInterval(function(){ $('time.day').ago(); },86400000/3);
+  setInterval(function(){ $('time.sec').ago(); },SECOND);
+  setInterval(function(){ $('time.min').ago(); },MINUTE/6);
+  setInterval(function(){ $('time.hr').ago(); },HOUR/4);
+  setInterval(function(){ $('time.day').ago(); },DAY/3);
 
   textObj.keydown(function(e){
     if((e.keyCode||e.which)===13){
@@ -172,7 +183,7 @@ $(function(){
   });
 
   socket.on('disconnect', function(){
-    setTimeout(function(){window.location.reload();}, 10000);
+    setTimeout(function(){window.location.reload();}, 10*SECOND);
   });
 
   this.retweet = function(id_str){
@@ -181,9 +192,9 @@ $(function(){
     return false;
   };
 
-  var reid = /(@[\w?=&.\/-9;#~%\-]+(?![\w\s?&.\/;#~%"=\-]*>))/g;
   this.reply = function(id_str, screen_name){
-    var ats = $('#'+id_str).text().match(reid),
+    var reid = /(@[\w?=&.\/-9;#~%\-]+(?![\w\s?&.\/;#~%"=\-]*>))/g,
+        ats = $('#'+id_str).text().match(reid),
         redundant = new RegExp('@('+screen_name+'|'+name+') ','g');
     if(ats){
       textObj.text('@'+screen_name+' '+($.unique(ats).join(' ')+' ').replace(redundant, ''));
@@ -208,7 +219,7 @@ $(function(){
     var text = textObj.text();
     
     if(text && name){
-      socket.send({text: text, in_reply_to_status_id: reply_id});
+      socket.send({text: text, in_reply_to_status_id: reply_id, include_entities: true});
       textObj.text('');
       reply_id = '';
       textObj.focus();
@@ -235,7 +246,7 @@ $(function(){
       windowObj = $(window);
   windowObj.scroll(function(){
     if ($(document).height() - windowObj.height() - windowObj.scrollTop() <= 0){
-      socket.send({scroll: {page: ++page}});
+      socket.send({scroll: {page: ++page, include_entities: true}});
     }
   });
 });

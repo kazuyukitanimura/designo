@@ -6,7 +6,7 @@
 var express = require('express'),
     RedisStore = require('connect-redis'),
     io = require('socket.io'),
-    twitter = require('./twitter');
+    Twitter = require('./twitter');
 
 var app = module.exports = express.createServer();
 
@@ -64,7 +64,7 @@ app.get('/', function(req, res){
 });
 
 app.get('/login', function(req, res){
-  var tw = new twitter(consumerKey, consumerSecret);
+  var tw = new Twitter(consumerKey, consumerSecret);
   tw.getRequestToken(function(error, url){
     if(error){
       console.error(error);
@@ -88,7 +88,7 @@ app.get('/authorized', function(req, res){
   if( !req.session.oauth ){
     res.redirect('/'); // invalid callback url access;
   }else{
-    var tw = new twitter(consumerKey, consumerSecret, req.session.oauth);
+    var tw = new Twitter(consumerKey, consumerSecret, req.session.oauth);
     tw.getAccessToken(req.query.oauth_verifier, function(error){
       if(error){
         console.error(error);
@@ -105,7 +105,7 @@ app.get('/authorized', function(req, res){
 
 if (!module.parent) {
   app.listen(8080);
-  console.log("Express server listening on port %d", app.address().port);
+  console.log('Express server listening on port '+app.address().port);
 }
 
 var socket = io.listen(app);
@@ -135,15 +135,15 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
   }
 
   if(req.session.oauth){
-    var tw = new twitter(consumerKey, consumerSecret, req.session.oauth);
+    var tw = new Twitter(consumerKey, consumerSecret, req.session.oauth);
     try{
       socket.tid2clt[tw._results.user_id] = client;
     }catch(e){
       console.error('socket.tid2sid ERROR: ' + e);
     }
     //view home
-    var scroll = function(page){
-      tw.getTimeline(page, function(error, data, response){
+    var scroll = function(params){
+      tw.getTimeline(params, function(error, data, response){
         if(error){
           console.error('TIMELLINE ERROR: ' + error);
         }else{
@@ -151,10 +151,10 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
         }
       });
     };
-    scroll({page: 1});
+    scroll({page: 1, include_entities: true});
     //user streams
-    var params = {},
-        stream = tw.openUserStream(params);
+    var usParams = {include_entities: true},
+        stream = tw.openUserStream(usParams);
     stream.on('data', function(data){
       try{
         if(data.friends){
@@ -168,7 +168,7 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
     stream.on('error', function(err){
       console.error('UserStream ERROR: ' + err);
       console.log('graceful restarting in 30 seconds');
-      setTimeout(function(){stream = tw.openUserStream(params);}, 30000);
+      setTimeout(function(){stream = tw.openUserStream(usParams);}, 30000);
     });
     stream.on('end', function(){
       console.log('UserStream ends successfully');
