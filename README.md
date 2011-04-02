@@ -18,12 +18,12 @@ More details will be explained at my blog, [http://hobbycoding.posterous.com/](h
 
 ## Tested Environment
 ### Browsers
-- Google Chrome
+- Google Chrome (works best)
 - Firefox
 - Safari
 
 ### Node.js version
-- v0.4.4
+- v0.4.5
 
 ## License
 

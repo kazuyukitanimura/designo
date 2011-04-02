@@ -46,6 +46,9 @@ function Twitter(consumerKey, consumerSecret, options){
   if( !options ){
     options = {};
   }
+  if(!(this instanceof Twitter)){ // enforcing new
+    return new Twitter(consumerKey, consumerSecret, options);
+  }
 
   this._oa = new OAuth(
     OAUTH_CONFIG.RequestTokenUrl,

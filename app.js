@@ -18,7 +18,7 @@ var consumerKey = 'your consumer key',
 app.configure(function(){
   app.set('views', __dirname + '/views');
   app.use(express.cookieParser());
-  app.use(express.session({ secret: 'himitsu', fingerprint: '', store: new RedisStore() }));
+  app.use(express.session({ secret: 'himitsu', fingerprint: '', store: new RedisStore() }));// TODO set the life time shorter than the oauth lifetime
   app.use(express.bodyParser());
   app.use(express.methodOverride());
   app.use(express.compiler({ src: __dirname + '/public', enable: ['less'] }));
@@ -67,9 +67,11 @@ app.get('/login', function(req, res){
   var tw = new Twitter(consumerKey, consumerSecret);
   tw.getRequestToken(function(error, url){
     if(error){
-      console.error(error);
-      res.writeHead(500, {'Content-Type': 'text/html'});
-      res.send('ERROR :' + error);
+      req.session.destroy(function(){
+        console.error(error);
+        res.writeHead(500, {'Content-Type': 'text/html'});
+        res.send('ERROR :' + error);
+      });
     }else{
       req.session.oauth = tw;
       res.redirect(url);
@@ -91,8 +93,10 @@ app.get('/authorized', function(req, res){
     var tw = new Twitter(consumerKey, consumerSecret, req.session.oauth);
     tw.getAccessToken(req.query.oauth_verifier, function(error){
       if(error){
-        console.error(error);
-        res.send(error);
+        req.session.destroy(function(){
+          console.error(error);
+          res.send(error);
+        });
       }else{
         req.session.oauth = tw;
         res.redirect('/');
@@ -166,12 +170,14 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
       }
     });
     stream.on('error', function(err){
-      console.error('UserStream ERROR: ' + err);
-      console.log('graceful restarting in 30 seconds');
-      setTimeout(function(){stream = tw.openUserStream(usParams);}, 30000);
+      req.session.destroy(function(){
+        console.error('UserStream ERROR: ' + err);
+      });
     });
     stream.on('end', function(){
-      console.log('UserStream ends successfully');
+      req.session.destroy(function(){
+        console.log('UserStream ends successfully');
+      });
     });
   }
 

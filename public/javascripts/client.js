@@ -4,36 +4,57 @@ var SECOND = 1000,
     DAY    = HOUR   * 24,
     MONTH  = DAY    * 31;
 
+if(!$.fn.hoverBio){
+  $.fn.hoverBio = function(target){
+    var thisObj = $(this[0]),
+        targetObj = (target||thisObj).children('.bio');
+    return thisObj.hover(
+      function(e){
+        targetObj.css('left',e.pageX+10).css('top',e.pageY).show();
+      },function(){
+        targetObj.hide();
+      } 
+    );
+  };
+}
 
-$.fn.hoverBio = function(target){
-  var thisObj = $(this[0]),
-      targetObj = target||thisObj;
-  return thisObj.hover(
-    function(e){
-      targetObj.children('.bio').css('left',e.pageX+10).css('top',e.pageY).show();
-    },function(){
-      targetObj.children('.bio').hide();
-    } 
-  );
-};
+if(!$.fn.hoverPic){
+  $.fn.hoverPic = function(){
+    return  $(this[0]).find('a').each(function(){
+      var thisObj = $(this),
+          thisImg = thisObj.children('img.twitpic');
+      if(thisImg){
+        thisObj.hover(
+          function(e){
+            thisImg.css('left',e.pageX+10).css('top',e.pageY).show();
+          },function(){
+            thisImg.hide();
+          } 
+        );
+      }
+    });
+  };
+}
 
-$.fn.ago = function(){
-  return this.each(function(){
-    var timestamp = Date.parse($(this).attr('datetime')),
-        duration = new Date() - timestamp;
-    if(duration<MINUTE){
-      $(this).text((duration/SECOND).toPrecision(2)+' secconds ago');
-    }else if(duration<HOUR){
-      $(this).attr('class','min').text((duration/MINUTE).toPrecision(2)+' minutes ago');
-    }else if(duration<DAY){
-      $(this).attr('class','hr').text((duration/HOUR).toPrecision(2)+' hours ago');
-    }else if(duration<MONTH){
-      $(this).attr('class','day').text((duration/DAY).toPrecision(2)+' days ago');
-    }else{ 
-      $(this).attr('class','').text(new Date(timestamp).toLocaleString().replace(/GMT.+/,''));
-    }
-  });
-};
+if(!$.fn.ago){
+  $.fn.ago = function(){
+    return this.each(function(){
+      var timestamp = Date.parse($(this).attr('datetime')),
+          duration = new Date() - timestamp;
+      if(duration<MINUTE){
+        $(this).text((duration/SECOND).toPrecision(2)+' secconds ago');
+      }else if(duration<HOUR){
+        $(this).attr('class','min').text((duration/MINUTE).toPrecision(2)+' minutes ago');
+      }else if(duration<DAY){
+        $(this).attr('class','hr').text((duration/HOUR).toPrecision(2)+' hours ago');
+      }else if(duration<MONTH){
+        $(this).attr('class','day').text((duration/DAY).toPrecision(2)+' days ago');
+      }else{ 
+        $(this).attr('class','').text(new Date(timestamp).toLocaleString().replace(/GMT.+/,''));
+      }
+    });
+  };
+}
 
 $(function(){
   var socket = new io.Socket();
@@ -45,7 +66,7 @@ $(function(){
       textObj = $('#text').focus(),
       sidebarObj = $('#sidebar'),
       allObj = $('#all'),
-      oldestId = '0000000000000000000000000000000000000000000000000';
+      oldestId = new Array(50); // the length should be larger than the digits of message.id_str==the newest id as initial value
   var increaseBadge = function(j,v){return ++v;};
   var decreaseBadge = function(j,v){return --v;};
   var deleteOutDiv = function(id_str){
@@ -62,31 +83,6 @@ $(function(){
     idObj.remove();
   };
   socket.on('message', function(message){
-    //Thanks to http://kawika.org/jquery/js/jquery.autolink.js
-    var re = /((http|https|ftp):\/\/[\w?=&.\/-;#~%\-]+(?![\w\s?&.\/;#~%"=\-]*>))/g,
-        af = '<a href="$1" target="_blank">$1</a> ';
-    // ToDO replace the following two functions using entities.urls.indices
-    var mkLink = function(str){
-      return str.replace(re, af);
-    };
-    $.fn.hoverPic = function(){
-      return  $(this[0]).find('a').each(function(){
-        var thisObj = $(this),
-            href = thisObj.attr('href'),
-            url = href.match(/http:\/\/twitpic.com\/(\w+)/) ? 'http://twitpic.com/show/thumb/'+RegExp.$1 :
-                  href.match(/http:\/\/yfrog.com\/(\w+)/) ? 'http://yfrog.com/'+RegExp.$1+':small' :
-                  href.match(/http:\/\/plixi.com\/p\/(\w+)/) ? 'http://api.plixi.com/api/tpapi.svc/imagefromurl?size=thumbnail&url='+href : null;
-        if(url){
-          thisObj.append('<img src="'+url+'" class="twitpic"/>').css('font-weight','bold').hover(
-            function(e){
-              thisObj.children('img').css('left',e.pageX+10).css('top',e.pageY).show();
-            },function(){
-              thisObj.children('img').hide();
-            } 
-          );
-        }
-      });
-    };
     if(message.count){
       $('#count').text(message.count);
     }else if(message['delete']){
@@ -99,18 +95,40 @@ $(function(){
             jQid = '#'+id,
             jQuid = '#'+uid,
             scroll = false,
-            user_mentions = message.entities.user_mentions;
+            text = message.text,
+            entities = message.entities,
+            user_mentions = entities.user_mentions,
+            mentioned = false,
+            urls = entities.urls;
         if((id.length===oldestId.length && id<oldestId) || id.length<oldestId.length){
           oldestId = id;
           scroll = true;
         }
+        // TODO retweets should be merged with the original
+        for(var i=urls.length, j=user_mentions.length; (i--)+(j--);){
+          if(j<0 || (i>=0 && urls[i].indices[0]>user_mentions[j].indices[0])){// check j and i first
+            var href = urls[i].url,
+                src = href.match(/http:\/\/twitpic.com\/(\w+)/) ? 'http://twitpic.com/show/thumb/'+RegExp.$1 :
+                      href.match(/http:\/\/yfrog.com\/(\w+)/) ? 'http://yfrog.com/'+RegExp.$1+':small' :
+                      href.match(/http:\/\/plixi.com\/p\//) ? 'http://api.plixi.com/api/tpapi.svc/imagefromurl?size=thumbnail&url='+href : null,
+                img = src ? ' style="font-weight:bold">'+href+'<img src="'+src+'" class="twitpic"/>' : '>'+href;
+            text = text.slice(0, urls[i].indices[0])+'<a href="'+href+'" target="_blank"'+img+'</a>'+text.slice(urls[i].indices[1]);
+            ++j;// put back the other one
+          }else{
+            mentioned = (user_mentions[j].screen_name === name);// true or false
+            text = text.slice(0, user_mentions[j].indices[0]) +
+                    '@<a href="#" onclick="select(\''+user_mentions[j].id+'\');" style="text-decoration:none;color:#2e991b">' + 
+                    user_mentions[j].screen_name + '</a>' + text.slice(user_mentions[j].indices[1]);
+            ++i;// put back the other one
+          }
+        }
 
-        var p_str = '<p><a href="#" onclick="select(\''+uid+'\');"><img src="'+user.profile_image_url+'" class="profile"/></a> '+mkLink(message.text)+'</p><span class="permalink"><span><time class="sec" datetime="'+message.created_at+'"></time> from</span> '+message.source+' | </span>',
+        var p_str = '<p><a href="#" onclick="select(\''+uid+'\');"><img src="'+user.profile_image_url+'" class="profile"/></a> '+text+'</p><span class="permalink"><span><time class="sec" datetime="'+message.created_at+'"></time> from</span> '+message.source+' | </span>',
             d_str = '<div id='+id+' class="'+uid+'">'+p_str+'</div>',
             rp_str = '<a onclick="reply(\''+id+'\',\''+user.screen_name+'\');" href="#">Reply</a>',
             rt_str = '<a onclick="retweet(\''+id+'\');" href="#">Retweet</a>',
             dl_str = '<a onclick="destroy(\''+id+'\');" href="#">Delete</a>',
-            bioObj = $('<div id='+uid+' class="sidebar" onclick="select(\''+uid+'\');"><a href="#"><img src="'+user.profile_image_url+'" /> (<span class="badge">0</span>) '+user.screen_name+'</a><div class="bio"><img src="'+user.profile_image_url+'" /><span><b class="fullname">'+user.name+'</b><br/><span>@'+user.screen_name+'</span><br/>'+user.location+'<br/><b>Web:</b> '+mkLink(''+user.url)+'<br/><b>Bio:</b> '+user.description+'</span></div></div>').hoverBio(),
+            bioObj = $('<div id='+uid+' class="sidebar" onclick="select(\''+uid+'\');"><a href="#"><img src="'+user.profile_image_url+'" /> (<span class="badge">0</span>) '+user.screen_name+'</a><div class="bio"><img src="'+user.profile_image_url+'" /><span><b class="fullname">'+user.name+'</b><br/><span>@'+user.screen_name+'</span><br/>'+user.location+'<br/><b>Web:</b> <a href="'+user.url+'" target="_blank">'+user.url+'</a><br/><b>Bio:</b> '+user.description+'</span></div></div>').hoverBio(),
             idObj = $(jQid),
             uidObj = $(jQuid);
         if(scroll || !(idObj.length)){
@@ -146,17 +164,15 @@ $(function(){
           }
           $(jQuid+'.sidebar a span.badge').text(increaseBadge);
           $('#all.sidebar a span.badge').text(increaseBadge);
-          for(var i=user_mentions.length; i--;){
-            if(user_mentions[i].screen_name === name){
-              $('#mentions.sidebar a span.badge').text(increaseBadge);
-              $(jQid).addClass('mentions');
-              break;
-            }
+          if(mentioned){
+            $('#mentions.sidebar a span.badge').text(increaseBadge);
+            $(jQid).addClass('mentions');
           }
           if(uid!==selected_id && selected_id !== 'all'){
             $(jQid+' :not(:has(.'+selected_id+'))').parentsUntil('#chat').hide();
           }
           $(jQid+' p a img.profile').hoverBio(uidObj);
+          $(jQid).data('user_mentions', user_mentions);
         }
       }else{
         console.log(message);
@@ -170,7 +186,7 @@ $(function(){
   setInterval(function(){ $('time.day').ago(); },DAY/3);
 
   textObj.keydown(function(e){
-    if((e.keyCode||e.which)===13){
+    if((e.keyCode||e.which)===13){ // return key
       document.send();
       e.preventDefault();
     }
@@ -193,14 +209,15 @@ $(function(){
   };
 
   this.reply = function(id_str, screen_name){
-    var reid = /(@[\w?=&.\/-9;#~%\-]+(?![\w\s?&.\/;#~%"=\-]*>))/g,
-        ats = $('#'+id_str).text().match(reid),
-        redundant = new RegExp('@('+screen_name+'|'+name+') ','g');
-    if(ats){
-      textObj.text('@'+screen_name+' '+($.unique(ats).join(' ')+' ').replace(redundant, ''));
-    }else{
-      textObj.text('@'+screen_name+' ');
+    var rms = ['@'+screen_name, ''],
+        ums = $('#'+id_str).data('user_mentions');
+    for(var i=ums.length; i--;){
+      if(ums[i].screen_name !== screen_name && ums[i].screen_name !== name){
+        rms.splice(-1, 0, '@'+ums[i].screen_name);
+      }
     }
+    textObj.text(rms.join(' '));
+
     textObj.focus();
     reply_id = id_str;
     selected_id = 'reply';
