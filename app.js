@@ -5,7 +5,7 @@
 
 var express = require('express'),
     RedisStore = require('connect-redis'),
-    io = require('socket.io'),
+    io = require('socket.io-connect'),
     Twitter = require('./twitter');
 
 var app = module.exports = express.createServer();
@@ -129,7 +129,6 @@ socket.broadcastTo = function(message, to){ //to has to be an Array
 };
 var count = 0,
     maxcount = 0;
-require('socket.io-connect');
 socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
   count++;
   client.broadcast({count: count});
