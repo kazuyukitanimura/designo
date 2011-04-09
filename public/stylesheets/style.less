@@ -7,24 +7,40 @@ body {
     color: #000;
     display: inline-block;
     height: 56px;
-    img {
-      margin-left: 2px;
-      margin-bottom: -4px;
-      height: 32px;
-      width: 32px;
+    h1 {
+      text-shadow: 1px 1px 1px #888;
+      -webkit-mask-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,0.2)), to(rgba(0,0,0,1)));
+      img {
+        margin-left: 2px;
+        margin-bottom: -4px;
+        height: 32px;
+        width: 32px;
+        -moz-box-shadow: 1px 1px 1px #888;
+        -webkit-box-shadow: 1px 1px 1px #888;
+        box-shadow: 1px 1px 1px #888;
+      }
     }
   }
 }
 #account {
-  border: 1px solid #eee;
-  background: #F6F6F6;
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#969696), to(#333));
+  background-image: -moz-linear-gradient(center bottom, #969696, #333);
+  border-bottom-left-radius: 8px;
+  -moz-border-bottom-left-radius: 8px;
+  -webkit-border-bottom-left-radius: 8px;
   position: absolute;
   top: 0px;
   right: 0px;
   padding: 3px 5px;
   a {
     text-decoration: none;
-    color: #00f;
+    color: #AEAEAE;
+    text-shadow: -1px -1px 1px #000;
+    font-size: 18px;
+    font-weight: bold;
+  }
+  a:hover {
+    color: #fff;
   }
 }
 #main{
@@ -192,10 +208,11 @@ body {
     background: #999;
     border: none;
     padding: 6px 8px;
-             -moz-border-radius: 8px;
-             -webkit-border-radius: 8px;
-             margin-left: 5px;
-             text-shadow: 0 1px 0 #fff;
+    border-radius: 8px;
+    -moz-border-radius: 8px;
+    -webkit-border-radius: 8px;
+    margin-left: 5px;
+    text-shadow: 0 1px 0 #fff;
     display: table-cell;
   }
   input[type=submit]:hover {

@@ -59,7 +59,10 @@ if(!$.fn.ago){
 $(function(){
   var socket = new io.Socket();
   socket.connect();
-  var reply_id = '',
+  var windowObj = $(window),
+      documentObj = $(document),
+      page = 1,
+      reply_id = '',
       selected_id = 'all',
       chatObj = $('#chat'),
       name = $('#name').text(),
@@ -89,70 +92,73 @@ $(function(){
       deleteOutDiv(message['delete'].status.id_str);
     }else{
       if(message.text){
-        var user = message.user,
-            id = message.id_str,
-            uid = user.id_str,
-            jQid = '#'+id,
-            jQuid = '#'+uid,
+        var id = message.id_str,
             scroll = false,
-            text = message.text,
-            entities = message.entities,
-            user_mentions = entities.user_mentions,
-            mentioned = false,
-            urls = entities.urls;
+            jQid = '#'+id,
+            idObj = $(jQid);
         if((id.length===oldestId.length && id<oldestId) || id.length<oldestId.length){
           oldestId = id;
           scroll = true;
         }
-        // TODO retweets should be merged with the original
-        for(var i=urls.length, j=user_mentions.length; (i--)+(j--);){
-          if(j<0 || (i>=0 && urls[i].indices[0]>user_mentions[j].indices[0])){// check j and i first
-            var href = urls[i].url,
-                src = href.match(/http:\/\/twitpic.com\/(\w+)/) ? 'http://twitpic.com/show/thumb/'+RegExp.$1 :
-                      href.match(/http:\/\/yfrog.com\/(\w+)/) ? 'http://yfrog.com/'+RegExp.$1+':small' :
-                      href.match(/http:\/\/plixi.com\/p\//) ? 'http://api.plixi.com/api/tpapi.svc/imagefromurl?size=thumbnail&url='+href : null,
-                img = src ? ' style="font-weight:bold">'+href+'<img src="'+src+'" class="twitpic"/>' : '>'+href;
-            text = text.slice(0, urls[i].indices[0])+'<a href="'+href+'" target="_blank"'+img+'</a>'+text.slice(urls[i].indices[1]);
-            ++j;// put back the other one
-          }else{
-            mentioned = (user_mentions[j].screen_name === name);// true or false
-            text = text.slice(0, user_mentions[j].indices[0]) +
-                    '@<a href="#" onclick="select(\''+user_mentions[j].id+'\');" style="text-decoration:none;color:#2e991b">' + 
-                    user_mentions[j].screen_name + '</a>' + text.slice(user_mentions[j].indices[1]);
-            ++i;// put back the other one
-          }
-        }
 
-        var p_str = '<p><a href="#" onclick="select(\''+uid+'\');"><img src="'+user.profile_image_url+'" class="profile"/></a> '+text+'</p><span class="permalink"><span><time class="sec" datetime="'+message.created_at+'"></time> from</span> '+message.source+' | </span>',
-            d_str = '<div id='+id+' class="'+uid+'">'+p_str+'</div>',
-            rp_str = '<a onclick="reply(\''+id+'\',\''+user.screen_name+'\');" href="#">Reply</a>',
-            rt_str = '<a onclick="retweet(\''+id+'\');" href="#">Retweet</a>',
-            dl_str = '<a onclick="destroy(\''+id+'\');" href="#">Delete</a>',
-            bioObj = $('<div id='+uid+' class="sidebar" onclick="select(\''+uid+'\');"><a href="#"><img src="'+user.profile_image_url+'" /> (<span class="badge">0</span>) '+user.screen_name+'</a><div class="bio"><img src="'+user.profile_image_url+'" /><span><b class="fullname">'+user.name+'</b><br/><span>@'+user.screen_name+'</span><br/>'+user.location+'<br/><b>Web:</b> <a href="'+user.url+'" target="_blank">'+user.url+'</a><br/><b>Bio:</b> '+user.description+'</span></div></div>').hoverBio(),
-            idObj = $(jQid),
-            uidObj = $(jQuid);
         if(scroll || !(idObj.length)){
+          var entities = message.entities,
+              urls = entities.urls,
+              user_mentions = entities.user_mentions,
+              text = message.text,
+              mentioned = false,
+              user = message.user,
+              uid = user.id_str,
+              jQuid = '#'+uid,
+              screen_name = user.screen_name,
+              profile_image_url = user.profile_image_url,
+              in_reply_to_status_id_str = message.in_reply_to_status_id_str,
+              uidObj = $(jQuid);
+          // TODO retweets should be merged with the original
+          for(var i=urls.length, j=user_mentions.length; (i--)+(j--);){
+            if(j<0 || (i>=0 && urls[i].indices[0]>user_mentions[j].indices[0])){// check j and i first
+              var href = urls[i].url,
+                  src = href.match(/http:\/\/twitpic.com\/(\w+)/) ? 'http://twitpic.com/show/thumb/'+RegExp.$1 :
+                        href.match(/http:\/\/yfrog.com\/(\w+)/) ? 'http://yfrog.com/'+RegExp.$1+':small' :
+                        href.match(/http:\/\/plixi.com\/p\//) ? 'http://api.plixi.com/api/tpapi.svc/imagefromurl?size=thumbnail&url='+href : null,
+                  img = src ? ' style="font-weight:bold">'+href+'<img src="'+src+'" class="twitpic"/>' : '>'+href;
+              text = text.slice(0, urls[i].indices[0])+'<a href="'+href+'" target="_blank"'+img+'</a>'+text.slice(urls[i].indices[1]);
+              ++j;// put back the other one
+            }else{
+              mentioned = (user_mentions[j].screen_name === name);// true or false
+              text = text.slice(0, user_mentions[j].indices[0]) +
+                      '@<a href="#" onclick="select(\''+user_mentions[j].id+'\');" style="text-decoration:none;color:#2e991b">' + 
+                      user_mentions[j].screen_name + '</a>' + text.slice(user_mentions[j].indices[1]);
+              ++i;// put back the other one
+            }
+          }
+          var p_str = '<p><a href="#" onclick="select(\''+uid+'\');"><img src="'+profile_image_url+'" class="profile"/></a> '+text+'</p><span class="permalink"><span><time class="sec" datetime="'+message.created_at+'"></time> from</span> '+message.source+' | </span>',
+              rp_str = '<a onclick="reply(\''+id+'\',\''+screen_name+'\');" href="#">Reply</a>';
+          if(screen_name===name){
+            p_str += '<span class="permalink">'+rp_str+' - <a onclick="destroy(\''+id+'\');" href="#">Delete</a></span>';
+          }else{
+            p_str += '<span class="permalink"><a onclick="retweet(\''+id+'\');" href="#">Retweet</a> - '+rp_str+'</span>';
+          }
           if(idObj.length){
             idObj.html(p_str).addClass(uid);
-          }else if(scroll){
-            chatObj.append(d_str);
           }else{
-            chatObj.prepend(d_str);
+            var d_str = '<div id='+id+' class="'+uid+'">'+p_str+'</div>';
+            if(scroll){
+              chatObj.append(d_str);
+            }else{
+              chatObj.prepend(d_str);
+            }
           }
           $(jQid).hoverPic();
-          if(user.screen_name===name){
-            $(jQid).append('<span class="permalink">'+rp_str+' - '+dl_str+'</span>');
-          }else{
-            $(jQid).append('<span class="permalink">'+rt_str+' - '+rp_str+'</span>');
-          }
-          if(message.in_reply_to_status_id_str){
+          if(in_reply_to_status_id_str){
             if(scroll){
-              $(jQid).append('<div id='+message.in_reply_to_status_id_str+' style="margin-left: 14px;"></div>');
+              $(jQid).append('<div id='+in_reply_to_status_id_str+' style="margin-left: 14px;"></div>');
             }else{
-              $(jQid).append($('#'+message.in_reply_to_status_id_str).css('margin-left', '14px'));
+              $(jQid).append($('#'+in_reply_to_status_id_str).css('margin-left', '14px'));
             }
           }
           if(!(uidObj.length)){
+            var bioObj = $('<div id='+uid+' class="sidebar" onclick="select(\''+uid+'\');"><a href="#"><img src="'+profile_image_url+'" /> (<span class="badge">0</span>) '+screen_name+'</a><div class="bio"><img src="'+profile_image_url+'" /><span><b class="fullname">'+user.name+'</b><br/><span>@'+screen_name+'</span><br/>'+user.location+'<br/><b>Web:</b> <a href="'+user.url+'" target="_blank">'+user.url+'</a><br/><b>Bio:</b> '+user.description+'</span></div></div>').hoverBio();
             if(scroll){
               sidebarObj.append(bioObj);
             }else{
@@ -259,10 +265,8 @@ $(function(){
     return false;
   };
 
-  var page = 1,
-      windowObj = $(window);
   windowObj.scroll(function(){
-    if ($(document).height() - windowObj.height() - windowObj.scrollTop() <= 0){
+    if (documentObj.height() - windowObj.height() - windowObj.scrollTop() <= 0){
       socket.send({scroll: {page: ++page, include_entities: true}});
     }
   });
