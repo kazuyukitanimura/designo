@@ -38,21 +38,23 @@ if(!$.fn.hoverPic){
 
 if(!$.fn.ago){
   $.fn.ago = function(){
-    return this.each(function(){
-      var timestamp = Date.parse($(this).attr('datetime')),
+    for(var i=this.length; i--;){
+      var thisObj = $(this[i]),
+          timestamp = Date.parse(thisObj.attr('datetime')),
           duration = new Date() - timestamp;
       if(duration<MINUTE){
-        $(this).text((duration/SECOND).toPrecision(2)+' secconds ago');
+        thisObj.text((duration/SECOND).toPrecision(2)+' secconds ago');
       }else if(duration<HOUR){
-        $(this).attr('class','min').text((duration/MINUTE).toPrecision(2)+' minutes ago');
+        thisObj.attr('class','min').text((duration/MINUTE).toPrecision(2)+' minutes ago');
       }else if(duration<DAY){
-        $(this).attr('class','hr').text((duration/HOUR).toPrecision(2)+' hours ago');
+        thisObj.attr('class','hr').text((duration/HOUR).toPrecision(2)+' hours ago');
       }else if(duration<MONTH){
-        $(this).attr('class','day').text((duration/DAY).toPrecision(2)+' days ago');
+        thisObj.attr('class','day').text((duration/DAY).toPrecision(2)+' days ago');
       }else{ 
-        $(this).attr('class','').text(new Date(timestamp).toLocaleString().replace(/GMT.+/,''));
+        thisObj.attr('class','').text(new Date(timestamp).toLocaleString().replace(/GMT.+/,''));
       }
-    });
+    }
+    return this;
   };
 }
 
