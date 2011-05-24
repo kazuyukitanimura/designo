@@ -23,7 +23,7 @@ More details will be explained at my blog, [http://hobbycoding.posterous.com/](h
 - Safari
 
 ### Node.js version
-- v0.4.5
+- v0.4.7
 
 ## License
 

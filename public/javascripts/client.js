@@ -258,7 +258,7 @@ $(function(){
   this.select = function(id_str){
     selected_id = id_str;
     $('#'+id_str+' .bio').hide();
-    $('.sidebar').removeAttr('style');
+    $('.sidebar').css('background', '#fff');
     $('#'+id_str).css('background', '#ddd');
     $('#chat').find(':hidden:not(.twitpic)').show();
     if(id_str!=='all'){
