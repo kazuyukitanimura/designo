@@ -188,10 +188,10 @@ $(function(){
     }
   });
 
-  setInterval(function(){ $('time.sec').ago(); },SECOND);
-  setInterval(function(){ $('time.min').ago(); },MINUTE/6);
-  setInterval(function(){ $('time.hr').ago(); },HOUR/4);
-  setInterval(function(){ $('time.day').ago(); },DAY/3);
+  setInterval(function(){ $('time.sec').ago(); }, SECOND);
+  setInterval(function(){ $('time.min').ago(); }, MINUTE/6);
+  setInterval(function(){ $('time.hr').ago(); }, HOUR/4);
+  setInterval(function(){ $('time.day').ago(); }, DAY/3);
 
   textObj.keydown(function(e){
     if((e.keyCode||e.which)===13){ // return key
@@ -207,7 +207,7 @@ $(function(){
   });
 
   socket.on('disconnect', function(){
-    setTimeout(function(){window.location.reload();}, 10*SECOND);
+    setTimeout(function(){ window.location.reload(); }, 10*SECOND);
   });
 
   this.retweet = function(id_str){

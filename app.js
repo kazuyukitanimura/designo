@@ -52,7 +52,7 @@ app.get('/', function(req, res){
       screenName = req.session.oauth._results.screen_name;
     }catch(e){
       console.error('screen_name ERROR: ' + e);
-      setTimeout(function(){res.redirect('/');}, 500);
+      setTimeout(res.redirect, 500, '/');
     }
   }
   res.render(jadeFile, {
