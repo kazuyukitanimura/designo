@@ -4,7 +4,8 @@
  */
 
 var express = require('express'),
-    RedisStore = require('connect-redis'),
+    RedisStore = require('connect-redis')(express),
+    //MemoryStore = require('connect').session.MemoryStore,
     io = require('socket.io-connect'),
     Twitter = require('./twitter');
 
@@ -18,7 +19,7 @@ var consumerKey = 'your consumer key',
 app.configure(function(){
   app.set('views', __dirname + '/views');
   app.use(express.cookieParser());
-  app.use(express.session({ secret: 'himitsu', fingerprint: '', store: new RedisStore() }));// TODO set the life time shorter than the oauth lifetime
+  app.use(express.session({ secret: 'himitsu', fingerprint: '', store: new RedisStore }));// TODO set the life time shorter than the oauth lifetime
   app.use(express.bodyParser());
   app.use(express.methodOverride());
   app.use(express.compiler({ src: __dirname + '/public', enable: ['less'] }));
