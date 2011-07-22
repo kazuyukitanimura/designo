@@ -3,13 +3,13 @@ This is a Twitter client demo with Node.js+Websocket+HTML5. Enjoy realtime tweet
 
 ## Requrements:
 - [Express](https://github.com/visionmedia/express)
+- [Connect](https://github.com/senchalabs/Connect)
 - [connect-redis](https://github.com/visionmedia/connect-redis)
 - [Jade](https://github.com/visionmedia/jade)
 - [less.js](https://github.com/cloudhead/less.js)
-- [Socket.IO-node](https://github.com/LearnBoost/Socket.IO-node)
+- [socket.io](https://github.com/learnboost/socket.io)
 - [node-oauth](https://github.com/ciaranj/node-oauth)
-- [kazuyukitanimura/Socket.IO-connect](https://github.com/kazuyukitanimura/Socket.IO-connect)
-- - Designo does not use session-web-sockets anymore
+- - Designo does not use session-web-sockets nor Socket.IO-connect anymore
 
 ## Demo
 Demo is available at [http://designo.pictshare.me/](http://designo.pictshare.me/)

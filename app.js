@@ -5,11 +5,10 @@
 
 var express = require('express'),
     RedisStore = require('connect-redis')(express),
-    //MemoryStore = require('connect').session.MemoryStore,
-    io = require('socket.io-connect'),
     Twitter = require('./twitter');
 
 var app = module.exports = express.createServer();
+var sessionStore = new RedisStore;
 
 var consumerKey = 'your consumer key',
     consumerSecret = 'your consumer secret';
@@ -19,7 +18,7 @@ var consumerKey = 'your consumer key',
 app.configure(function(){
   app.set('views', __dirname + '/views');
   app.use(express.cookieParser());
-  app.use(express.session({ secret: 'himitsu', fingerprint: '', store: new RedisStore }));// TODO set the life time shorter than the oauth lifetime
+  app.use(express.session({secret: 'himitsu!', fingerprint: function(req){return req.socket.remoteAddress;}, store: sessionStore, key: 'express.sid'}));
   app.use(express.bodyParser());
   app.use(express.methodOverride());
   app.use(express.compiler({ src: __dirname + '/public', enable: ['less'] }));
@@ -113,14 +112,43 @@ if (!module.parent) {
   console.log('Express server listening on port '+app.address().port);
 }
 
-var socket = io.listen(app);
-socket.tid2clt = {};
-socket.broadcastTo = function(message, to){ //to has to be an Array
+var io = require('socket.io').listen(app);
+// Based on http://www.danielbaulig.de/socket-ioexpress/
+io.set('authorization', function (data, accept){
+  if(data.headers.cookie){
+    var parseCookie = require('connect').utils.parseCookie;
+    data.cookie = parseCookie(data.headers.cookie);
+    data.sessionID = data.cookie['express.sid'];
+    // save the session store to the data object 
+    // (as required by the Session constructor)
+    data.sessionStore = sessionStore;
+    sessionStore.get(data.sessionID, function (err, session){
+      if(err){
+        accept(err.message, false);
+      }else{
+        // create a session object, passing data as request and our
+        // just acquired session data
+        var Session = require('connect').middleware.session.Session;
+        data.session = new Session(data, session);
+        accept(null, true);
+      }
+    });
+  } else {
+   return accept('No cookie transmitted.', false);
+  }
+});
+
+io.sockets.tid2clt = {};
+io.sockets.broadcastTo = function(to, message){ //to has to be an Array
   try{
     for(var i=to.length; i--;){
       var clt = this.tid2clt[to[i]];
       if(clt){
-        clt.send(message);
+        if(this.flags.json){
+          clt.json.send(message);
+        }else{
+          clt.send(message);
+        }
       }
     }
   }catch(e){
@@ -130,20 +158,26 @@ socket.broadcastTo = function(message, to){ //to has to be an Array
 };
 var count = 0,
     maxcount = 0;
-socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
+io.sockets.on('connection', function(client){
   count++;
-  client.broadcast({count: count});
-  client.send({count: count});
+  client.json.broadcast.send({count: count});
+  client.json.send({count: count});
   if(count>maxcount){
     console.log('maxcount: '+(maxcount=count));
   }
+// Based on http://www.danielbaulig.de/socket-ioexpress/
+  var hs = client.handshake;
+  var session = hs.session;
+  var sessionID = hs.sessionID;
+  console.log('A client with sessionID '+sessionID+' connected!');
+  // setup an inteval that will keep our session fresh
 
-  if(req.session.oauth){
-    var tw = new Twitter(consumerKey, consumerSecret, req.session.oauth);
+  if(session.oauth){
+    var tw = new Twitter(consumerKey, consumerSecret, session.oauth);
     try{
-      socket.tid2clt[tw._results.user_id] = client;
+      io.sockets.tid2clt[tw._results.user_id] = client;
     }catch(e){
-      console.error('socket.tid2sid ERROR: ' + e);
+      console.error('io.sockets.tid2sid ERROR: ' + e);
     }
     //view home
     var scroll = function(params){
@@ -151,7 +185,8 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
         if(error){
           console.error('TIMELLINE ERROR: ' + error);
         }else{
-          client.send(data);
+          client.json.send(data);
+          //req.session.page.push(data);
         }
       });
     };
@@ -163,19 +198,19 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
       try{
         if(data.friends){
         }else{
-          client.send(data);
+          client.json.send(data);
         }
       }catch(e){
         console.error('dispatch event ERROR: ' + e);
       }
     });
     stream.on('error', function(err){
-      req.session.destroy(function(){
+      session.destroy(function(){
         console.error('UserStream ERROR: ' + err);
       });
     });
     stream.on('end', function(){
-      req.session.destroy(function(){
+      session.destroy(function(){
         console.log('UserStream ends successfully');
       });
     });
@@ -199,8 +234,8 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
           if(error){
             console.error("UPDATE ERROR\ndata: "+data+'response: '+response+'oauth: '+tw+'message: '+message);
           }else{
-            client.send(data);
-            socket.broadcastTo(data, client.followers);
+            client.json.send(data);
+            io.sockets.json.broadcastTo(client.followers, data);
           }
         });
       }else if(message.retweet){
@@ -208,8 +243,8 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
           if(error){
             console.error("RETWEET ERROR\ndata: "+data+'response: '+response+'oauth: '+tw+'message: '+message);
           }else{
-            client.send(data);
-            socket.broadcastTo(data, client.followers);
+            client.json.send(data);
+            io.sockets.json.broadcastTo(client.followers, data);
           }
         });
       }else if(message.destroy){
@@ -223,8 +258,25 @@ socket.on('connection', socket.prefixWithMiddleware(function(client,req,res){
       }
     }
   });
-  client.on('disconnect', function(){ //disconnect
+  client.on('disconnect', function(){
     count--;
-    client.broadcast({count: count});
+    client.json.broadcast.send({count: count});
   });
-}));
+  // Based on http://www.danielbaulig.de/socket-ioexpress/
+  var intervalID = setInterval(function(){
+      // reload the session (just in case something changed,
+      // we don't want to override anything, but the age)
+      // reloading will also ensure we keep an up2date copy
+      // of the session with our connection.
+      session.reload(function(){ 
+          // "touch" it (resetting maxAge and lastAccess)
+          // and save it back again.
+          session.touch().save();
+      });
+  }, 60*1000);
+  client.on('disconnect', function(){
+    console.log('A client with sessionID '+sessionID+' disconnected!');
+    // clear the client interval to stop refreshing the session
+    clearInterval(intervalID);
+  });
+});
