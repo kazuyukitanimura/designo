@@ -234,7 +234,7 @@ $(function(){
   
   this.destroy = function(id_str){
     deleteOutDiv(id_str);
-    socket.json.send({destroy: {status: {id_str: id_str}}});
+    socket.emit('destroy', {id_str: id_str});
     textObj.focus();
     return false;
   };

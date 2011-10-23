@@ -247,14 +247,21 @@ io.sockets.on('connection', function(client){
             io.sockets.json.broadcastTo(client.followers, data);
           }
         });
-      }else if(message.destroy){
-        tw.destroy(message.destroy.status.id_str, function(error, data, response){
-          if(error){
-            console.error("DELETE ERROR\ndata: "+data+'response: '+response+'oauth: '+tw+'message: '+message);
-          }
-        });
+      //}else if(message.destroy){
+      //  tw.destroy(message.destroy.status.id_str, function(error, data, response){
+      //    if(error){
+      //      console.error("DELETE ERROR\ndata: "+data+'response: '+response+'oauth: '+tw+'message: '+message);
+      //    }
+      //  });
       }
     }
+  });
+  client.on('destroy', function(message){
+    tw.destroy(message.id_str, function(error, data, response){
+      if(error){
+        console.error("DELETE ERROR\ndata: "+data+'response: '+response+'oauth: '+tw+'message: '+message);
+      }
+    });
   });
   client.on('scroll', function(message){
     scroll(message);
