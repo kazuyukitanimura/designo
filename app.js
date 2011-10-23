@@ -253,10 +253,11 @@ io.sockets.on('connection', function(client){
             console.error("DELETE ERROR\ndata: "+data+'response: '+response+'oauth: '+tw+'message: '+message);
           }
         });
-      }else if(message.scroll){
-        scroll(message.scroll);
       }
     }
+  });
+  client.on('scroll', function(message){
+    scroll(message);
   });
   client.on('disconnect', function(){
     count--;

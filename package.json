@@ -1,0 +1,23 @@
+{
+  "author": "kazuyukitanimura",
+  "name": "designo",
+  "description": "Realtime Twitter client exploiting Node.js+Websockets+HTML5",
+  "version": "0.1",
+  "repository": {
+    "url": "https://github.com/kazuyukitanimura/designo"
+  },
+  "main": "app.js",
+  "engines": {
+    "node": ">= v0.4.12"
+  },
+  "dependencies": {
+    "connect": ">= 1.7.1"
+  , "connect-redis": ">= 1.1.0"
+  , "express": ">= 2.4.7"
+  , "jade": ">= 0.16.2"
+  , "less": ">= 1.1.4"
+  , "oauth": ">= 0.9.5"
+  , "socket.io": ">= 0.8.5"
+  },
+  "devDependencies": {}
+}

@@ -268,7 +268,7 @@ $(function(){
 
   windowObj.scroll(function(){
     if (documentObj.height() - windowObj.height() - windowObj.scrollTop() <= 0){
-      socket.json.send({scroll: {page: ++page, include_entities: true}});
+      socket.emit('scroll', {page: ++page, include_entities: true});
     }
   });
 });
