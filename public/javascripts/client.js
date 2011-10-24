@@ -210,7 +210,7 @@ $(function(){
   });
 
   this.retweet = function(id_str){
-    socket.json.send({retweet: {status: {id_str: id_str}}});
+    socket.emit('retweet', {id_str: id_str});
     textObj.focus();
     return false;
   };

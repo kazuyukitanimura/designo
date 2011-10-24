@@ -238,23 +238,18 @@ io.sockets.on('connection', function(client){
             io.sockets.json.broadcastTo(client.followers, data);
           }
         });
-      }else if(message.retweet){
-        tw.retweet(message.retweet.status.id_str, function(error, data, response){
-          if(error){
-            console.error("RETWEET ERROR\ndata: "+data+'response: '+response+'oauth: '+tw+'message: '+message);
-          }else{
-            client.json.send(data);
-            io.sockets.json.broadcastTo(client.followers, data);
-          }
-        });
-      //}else if(message.destroy){
-      //  tw.destroy(message.destroy.status.id_str, function(error, data, response){
-      //    if(error){
-      //      console.error("DELETE ERROR\ndata: "+data+'response: '+response+'oauth: '+tw+'message: '+message);
-      //    }
-      //  });
       }
     }
+  });
+  client.on('retweet', function(message){
+    tw.retweet(message.id_str, function(error, data, response){
+      if(error){
+        console.error("RETWEET ERROR\ndata: "+data+'response: '+response+'oauth: '+tw+'message: '+message);
+      }else{
+        client.json.send(data);
+        io.sockets.json.broadcastTo(client.followers, data);
+      }
+    });
   });
   client.on('destroy', function(message){
     tw.destroy(message.id_str, function(error, data, response){
