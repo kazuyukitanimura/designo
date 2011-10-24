@@ -191,6 +191,16 @@ io.sockets.on('connection', function(client){
       });
     };
     scroll({page: 1, include_entities: true});
+    //manage followers
+    if(!client.followers){
+      tw.followers(function(error, data, response){
+        if(error){
+          console.error('FOLLOWERS ERROR: ' + error);
+        }else{
+          client.followers = data;
+        }
+      });
+    }
     //user streams
     var usParams = {include_entities: true},
         stream = tw.openUserStream(usParams);
@@ -216,30 +226,15 @@ io.sockets.on('connection', function(client){
     });
   }
 
-  client.on('message', function(message){
-    //message
-    if(tw){
-      //manage followers
-      if(!client.followers){
-        tw.followers(function(error, data, response){
-          if(error){
-            console.error('FOLLOWERS ERROR: ' + error);
-          }else{
-            client.followers = data;
-          }
-        });
+  client.on('update', function(message){
+    tw.update(message, function(error, data, response){
+      if(error){
+        console.error("UPDATE ERROR\ndata: "+data+'response: '+response+'oauth: '+tw+'message: '+message);
+      }else{
+        client.json.send(data);
+        io.sockets.json.broadcastTo(client.followers, data);
       }
-      if(message.text){
-        tw.update(message, function(error, data, response){
-          if(error){
-            console.error("UPDATE ERROR\ndata: "+data+'response: '+response+'oauth: '+tw+'message: '+message);
-          }else{
-            client.json.send(data);
-            io.sockets.json.broadcastTo(client.followers, data);
-          }
-        });
-      }
-    }
+    });
   });
   client.on('retweet', function(message){
     tw.retweet(message.id_str, function(error, data, response){

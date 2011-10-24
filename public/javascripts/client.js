@@ -243,7 +243,7 @@ $(function(){
     var text = textObj.text();
     
     if(text && name){
-      socket.json.send({text: text, in_reply_to_status_id: reply_id, include_entities: true});
+      socket.emit('update', {text: text, in_reply_to_status_id: reply_id, include_entities: true});
       textObj.text('');
       reply_id = '';
       textObj.focus();
