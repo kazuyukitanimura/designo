@@ -124,6 +124,7 @@ $(function(){
                 var href = urls[i].expanded_url,
                     src = href.match(/http:\/\/twitpic.com\/(\w+)/) ? 'http://twitpic.com/show/thumb/'+RegExp.$1 :
                           href.match(/http:\/\/yfrog.com\/(\w+)/) ? 'http://yfrog.com/'+RegExp.$1+':small' :
+                          href.match(/http:\/\/instagr.am\/p\/(\w+)/) ? 'http://instagr.am/p/'+RegExp.$1+'/media/?size=t' :
                           href.match(/http:\/\/plixi.com\/p\//) ? 'http://api.plixi.com/api/tpapi.svc/imagefromurl?size=thumbnail&url='+href : null,
                     img = src ? ' style="font-weight:bold">'+href+'<img src="'+src+'" class="twitpic"/>' : '>'+href;
                 text = text.slice(0, urls[i].indices[0])+'<a href="'+href+'" target="_blank"'+img+'</a>'+text.slice(urls[i].indices[1]);
