@@ -3,9 +3,12 @@
  * Module dependencies.
  */
 
-var express = require('express'),
-    RedisStore = require('connect-redis')(express),
-    Twitter = require('./twitter');
+var express = require('express');
+var RedisStore = require('connect-redis')(express);
+var Twitter = require('./twitter');
+var connect = require('connect');
+var parseCookie = connect.utils.parseCookie;
+var Session = connect.middleware.session.Session;
 
 var app = module.exports = express.createServer();
 var sessionStore = new RedisStore;
@@ -116,7 +119,6 @@ var io = require('socket.io').listen(app);
 // Based on http://www.danielbaulig.de/socket-ioexpress/
 io.set('authorization', function (data, accept){
   if(data.headers.cookie){
-    var parseCookie = require('connect').utils.parseCookie;
     data.cookie = parseCookie(data.headers.cookie);
     data.sessionID = data.cookie['express.sid'];
     // save the session store to the data object 
@@ -128,7 +130,6 @@ io.set('authorization', function (data, accept){
       }else{
         // create a session object, passing data as request and our
         // just acquired session data
-        var Session = require('connect').middleware.session.Session;
         data.session = new Session(data, session);
         accept(null, true);
       }
